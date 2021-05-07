@@ -10,8 +10,8 @@ Run using
     & <Directory>NGUInjectorPrettyPrint.ps1
     
     which displays a simple menu with options to either display the full file, or run continuously displaying the 
-    last 2 lines added. There is also a very rudimentary help. This menu will default to the continuous option after 
-    5 seconds.
+    last 2 lines added. There is also a very rudimentary help. This menu will default to the continuous option 
+    after 5 seconds.
 
 It can accept 2 parameters (either by the named parameters below, or using the raw values):
 
