@@ -740,6 +740,9 @@ function ProcessLines()
 
         $ParsedLine.Populate($line)
 
+        #Fix for Issue 1
+        $ParsedLine.Line1=($ParsedLine.KeyWord -eq "Starting Loot Writer")
+
         if ($ParsedLine.Exception)
         {
             ExceptionParser
