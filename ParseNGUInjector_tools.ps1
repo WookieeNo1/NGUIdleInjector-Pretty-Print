@@ -885,13 +885,6 @@ function DisplayHelp()
 
 function run()
 {
-    if ($PSVersionTable.PSversion.major -lt 7) 
-    {
-        Clear-Host
-        Write-Host "Requires PowerShell v 7"
-        exit
-    }
-
     $FileName = $Env:Userprofile+"\Desktop\NGUInjector\logs\"+$BaseFile
 
     switch (Menu) 
