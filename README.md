@@ -5,7 +5,7 @@ This is a simple powershell script (my first, so please don't bite) to pretty pr
 
 It requires PS 7, and will terminate iF any other version is detected.
 
-Run using 
+Run using:
 
     & <Directory>NGUInjectorPrettyPrint.ps1
     
@@ -36,4 +36,7 @@ TODO:
     The menu ONLY accesses Inject.log, this will be fixed to allow file selection
     
     There are some log entries it has yet to handle, due to not having any examples to test.
-    
+
+Changelog
+
+    Cube Progress now highlights numerical values, as does Turning in Quest Items
