@@ -31,7 +31,6 @@ TODO:
     (As a quick fix, I recommend Windows Terminal, which can be downloaded at 
     https://www.microsoft.com/en-gb/p/windows-terminal/9n0dx20hk701#activetab=pivot:overviewtab )
 
-    There are some places where the detection/highlighting of numbers includes any following text. 
 
     The menu ONLY accesses Inject.log, this will be fixed to allow file selection
     
@@ -40,3 +39,4 @@ TODO:
 Changelog
 
     Cube Progress now highlights numerical values, as does Turning in Quest Items
+    There are some places where the detection/highlighting of numbers includes any following text. This has been fixed
