@@ -628,7 +628,7 @@ function Parse_inject_Keywords{
                 # $"Turning in {questItems.Length} quest items"
                 # "Turning in quest"
                 "Turning" {
-                    Write-Host -NoNewline $ParsedLine.ActiveLine -ForegroundColor $clrINFO
+                    Highlight_Numbers($ParsedLine.ActiveLine)
                 }
 
 # "Unable to harvest now"
