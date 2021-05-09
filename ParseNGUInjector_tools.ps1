@@ -445,7 +445,8 @@ function Parse_inject_Keywords{
         #     Cube Progress: ... Power. Average Per Minute: ...
         "Cube Progress" {
             Write-Host -NoNewline $ParsedLine.KeyWord,": " -ForegroundColor $clrINFO -Separator ""
-            Write-Host -NoNewline $ParsedLine.Parts[1..2].trim() -ForegroundColor $clrSignificantData -Separator ":"
+            #Fixed Code Progress Highlighting by joining Parts with ": "
+            Highlight_Numbers($ParsedLine.Parts[1..2].trim() -join ": " )
         }
         # $"Equipping Diggers: {string.Join(",", diggers.Select(x => x.ToString()).ToArray())}"
         "Equipping Diggers" {
