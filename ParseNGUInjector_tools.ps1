@@ -683,6 +683,9 @@ function Parse_pitspin_Keywords()
             Write-Host -NoNewline $ParsedLine.KeyWord,": " -ForegroundColor $clrINFO -Separator ""
         }
         default{
+            #Fix for Incorrect number highlighting when no space separating value and Non-digit word
+            $ParsedLine.ActiveLine = $ParsedLine.ActiveLine.Replace("%.", "%. ")
+
             Highlight_Numbers($ParsedLine.ActiveLine)
         }
     }
