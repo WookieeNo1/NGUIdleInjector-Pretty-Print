@@ -664,7 +664,7 @@ function Highlight_Numbers()
                 #fix for Numeric values without trailing ' ' 
                 # eg - You eat the fruit and icrease your Attack and Defense! Power Fruit α's multiplier increased from <b>0%</b> to <b>4.489E+007%</b>.You've also gained 23982 Seeds!
                 if ($part.EndsWith('%.')){
-                    Write-Host -NoNewline $part.Substring(0,$part.Length - 1),"" -ForegroundColor $clrSignificantData -separator ""
+                    Write-Host -NoNewline $part.Substring(0,$part.Length - 1) -ForegroundColor $clrSignificantData
                     Write-Host -NoNewline '. ' -ForegroundColor $clrINFO
                 }
                 else {
