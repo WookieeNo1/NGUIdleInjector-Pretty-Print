@@ -687,6 +687,12 @@ function Parse_pitspin_Keywords()
             Write-Host -NoNewline $ParsedLine.KeyWord,": " -ForegroundColor $clrINFO -Separator ""
             Highlight_Numbers($ParsedLine.Parts[1])
         }
+        # Fix for Daily Spin Rewards Not Highlighting numbers
+        "Daily Spin Reward"
+        {
+            Write-Host -NoNewline $ParsedLine.KeyWord,": " -ForegroundColor $clrINFO -Separator ""
+            Highlight_Numbers($ParsedLine.Parts[1])
+        }
         "You Gained"
         {
             Write-Host -NoNewline $ParsedLine.KeyWord,": " -ForegroundColor $clrINFO -Separator ""
