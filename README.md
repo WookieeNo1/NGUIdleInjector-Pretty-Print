@@ -48,5 +48,6 @@ Changelog
 
     Colours.csv: added clrHyperbole - set to 0 to make them disappear
 
+    Colours.csv: Removed, now created as necessary with all legal User-defined colours 
 
 (Yes, I'm British)

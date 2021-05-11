@@ -30,12 +30,96 @@ $clrException = 4
 #Specific Message Highlighting
 $clrMoneyPitReward = $clrINFO
 $clrHyperbole = $clrException
+
+$Colours = @(
+    [PSCustomObject]@{
+        Variable = "clrMoneyPitReward"
+        Value    = $clrMoneyPitReward
+    }
+    [PSCustomObject]@{
+        Variable = "clrHyperbole"
+        Value    = $clrHyperbole
+    }
+)
+
 #Allows for Inject, PitSpin and Loot logs
 $BaseFile = "inject.log"
+$ColoursFullPath = "$PSScriptRoot\Colours.CSV"
 
 class LogParserSettings {
     [string]$LastTimeStamp = ""
     [string]$filler = ""
+}
+
+function SetBaseColourFile {
+    Add-Content -Path $ColoursFullPath -Value 'Variable,Value'
+    $Colours | Export-Csv -Path $ColoursFullPath -UseQuotes Never
+}
+
+function CheckColoursFile {
+
+    # Colours File Does Not Exist
+    if ( -not (Test-Path -Path $ColoursFullPath) ) {
+        SetBaseColourFile
+    }
+    else {
+        $TestCSV = Get-Content $ColoursFullPath -First 1
+        If ($TestCSV.Length -eq 0 -or $TestCSV -notmatch 'Variable,Value') {
+            # File Present, but invalid
+            $Backup = $ColoursFullPath.Replace('CSV','old')
+
+            Write-Host "Invalid CSV - $ColoursFullPath" -ForegroundColor $clrWarning
+            Write-Host "Existing File renamed to",$Backup -ForegroundColor $clrWarning
+
+            Remove-Item $Backup -ErrorAction SilentlyContinue
+            Rename-Item $ColoursFullPath $Backup
+
+            SetBaseColourFile
+
+        }
+        elseif (-not ((Get-Content $ColoursFullPath -Raw) -match "\r\n$")) {
+            # Insert terminal CR/LF as necessary
+            Add-Content $ColoursFullPath ""
+        } 
+    
+        # Need to check that all current values are present
+        $MissingColours = foreach ($Colour in $Colours) {
+            $test = Import-CSV -Path $ColoursFullPath | 
+            Where-Object { 
+                $FileVariable = $_.Variable.Replace(" ", "")
+                $FileVariable = $FileVariable.Replace("`t", ",")
+                # Detect either normal or commented Variable, ignoring WhiteSapce
+                $FileVariable -eq $Colour.Variable -or $FileVariable -eq '#' + $Colour.Variable 
+            }
+            #1 if no result, add to output
+            if ( $NULL -eq $test) {
+                $Colour
+            }
+        }
+        # If any output, append, using default values, to CSV file
+        if ( $MissingColours ) {
+            $MissingColours | Export-CSV $ColoursFullPath –Append -UseQuotes Never
+        }
+    }
+
+    ReadColoursFile
+
+}
+function ReadColoursFile {
+    # Import User-Defined Variables from validated list
+    # Added clrHyperBole - set to 0 for make it disappear
+    $ValidVariables = @("clrMoneyPitReward", "clrHyperbole")
+
+    Import-CSV -Path $ColoursFullPath | Foreach-Object -Process {
+    
+        if ($PSItem.Variable -in $ValidVariables) {
+            # Replace any existing Variables' values 
+            Remove-Variable -name $PSItem.Variable -ErrorAction SilentlyContinue
+            
+            New-Variable -Name $PSItem.Variable -Value $PSItem.Value 
+        }
+    }
+    
 }
 
 function MergeParser {
@@ -80,7 +164,7 @@ Function RemovingParser() {
 }
 
 Function SettingsParser() {
-    #remove date string if present - fudge
+    # remove date string if present - fudge
     if ( $ParsedLine.Raw -like "*:*" -and $ParsedLine.SettingsFirst) {
         $ParsedLine.ActiveLine = $ParsedLine.Raw.split(":")[2]
         $ParsedLine.Populate($ParsedLine.ActiveLine)
@@ -264,7 +348,6 @@ function BoostParser {
 }
 
 function ExceptionParser() {
-    #    param ([Parameter(Mandatory=$true)][ref]$ExceptionStr)
 
     if ($ParsedLine.Parts[0].TrimStart().StartsWith( "at ")) {
         Write-host -NoNewline $ParsedLine.Parts[0] -ForegroundColor $clrException
@@ -304,7 +387,7 @@ class LogLine {
             # Remove Seconds component - output will only show changes in minutes, filling with space within the same minute
             $this.TimeStamp = $this.Parts[0].trim() + ":" + $this.Parts[1].trim()
             $this.TimeStamp = $this.TimeStamp.split("(").trim()[0]
-            #Timestamp is now fixed length
+            # Timestamp is now fixed length
             $this.TimeStamp = $this.TimeStamp + " " * (19 - $this.TimeStamp.length)
             $DateStripped = $true
             $this.filler = " " * $this.TimeStamp.length
@@ -408,7 +491,7 @@ function Parse_inject_Keywords {
         #     Cube Progress: ... Power. Average Per Minute: ...
         "Cube Progress" {
             Write-Host -NoNewline $ParsedLine.KeyWord, ": " -ForegroundColor $clrINFO -Separator ""
-            #Fixed Code Progress Highlighting by joining Parts with ": "
+            # Fixed Code Progress Highlighting by joining Parts with ": "
             Highlight_Numbers($ParsedLine.Parts[1..2].trim() -join ": " )
         }
         # $"Equipping Diggers: {string.Join(",", diggers.Select(x => x.ToString()).ToArray())}"
@@ -618,7 +701,7 @@ function Highlight_Numbers() {
         $Parts = $args[0].trim().ToString().split(" ")
         foreach ($part in $Parts) {
             if ($part.Substring(0, 1) -in $Numeric) {
-                #fix for Numeric values without trailing ' ' 
+                # fix for Numeric values without trailing ' ' 
                 # eg - You eat the fruit and icrease your Attack and Defense! Power Fruit α's multiplier increased from <b>0%</b> to <b>4.489E+007%</b>.You've also gained 23982 Seeds!
                 if ($part.EndsWith('%.')) {
                     Write-Host -NoNewline $part.Substring(0, $part.Length - 1) -ForegroundColor $clrSignificantData
@@ -653,7 +736,7 @@ function Parse_pitspin_Keywords() {
             $ParsedLine.IndentLevel = 1
         }
         default {
-            #Fix for Incorrect number highlighting when no space separating value and Non-digit word 
+            # Fix for Incorrect number highlighting when no space separating value and Non-digit word 
             $ParsedLine.ActiveLine = $ParsedLine.ActiveLine.Replace("%.", "%. ") 
             if ($ParsedLine.IndentLevel -eq 1) {
                 Write-Host -NoNewline "  "
@@ -724,7 +807,7 @@ function ProcessLines() {
         if (-not ($BaseFile -eq "pitspin.log" -and $line -eq "")) {
             $ParsedLine.Populate($line)
 
-            #Fix for Issue 1
+            # Fix for Issue 1
             $ParsedLine.Line1 = ($ParsedLine.KeyWord -eq "Starting Loot Writer")
 
             if ($ParsedLine.Exception) {
@@ -742,9 +825,9 @@ function ProcessLines() {
             else {
                 if (-not $ParsedLine.Merge) {
                     if ($ParsedLine.TimeStamp -ne $ActiveSettings.LastTimeStamp) {
-                        #Display New Minute
+                        # Display New Minute
                         Write-host -NoNewline $ParsedLine.TimeStamp
-                        #Store New value
+                        # Store New value
                         $ActiveSettings.LastTimeStamp = $ParsedLine.TimeStamp
                     }
                     else {
