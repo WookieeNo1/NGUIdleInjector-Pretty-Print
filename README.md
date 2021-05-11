@@ -40,3 +40,9 @@ Changelog
 
     Cube Progress now highlights numerical values, as does Turning in Quest Items
     There are some places where the detection/highlighting of numbers includes any following text. This has been fixed
+    
+    PitSpin: Removed Blank Line in 'You Gained' entries and Indented associated lines
+
+    PitSpin: Added Colours.csv to allow User-defined colours for Money Pit Rewards entries - remove # to activate and set colour value as required
+
+(Yes, I'm British)
