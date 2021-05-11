@@ -10,6 +10,20 @@ if ($PSVersionTable.PSversion.major -lt 7)
 $configFullPath = "$PSScriptRoot\ParseNGUInjector_tools.ps1"
 Import-Module -Force $configFullPath
 
+#Import User-Defined Variables from validated list
+$ValidVariables = @("clrMoneyPitReward")
+if (Test-Path -Path $PSScriptRoot\Colours.csv )
+{
+    Import-CSV -Path $PSScriptRoot\Colours.csv|Foreach-Object -Process {
+
+        if ($PSItem.Variable -in $ValidVariables)
+        {
+            Remove-Variable -name $PSItem.Variable
+            New-Variable -Name $PSItem.Variable -Value $PSItem.Value 
+        }
+    }
+}
+
 $stopWatch = New-Object -TypeName System.Diagnostics.Stopwatch
 $ActiveSettings = [LogParserSettings]::new()
 $ParsedLine = [LogLine]::new()

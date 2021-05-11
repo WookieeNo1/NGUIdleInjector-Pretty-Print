@@ -699,13 +699,21 @@ function Parse_pitspin_Keywords()
         "You Gained"
         {
             Write-Host -NoNewline $ParsedLine.KeyWord,": " -ForegroundColor $clrINFO -Separator ""
+            # Following lines are to be indented
+            $ParsedLine.IndentLevel=1
         }
         default{
             #Fix for Incorrect number highlighting when no space separating value and Non-digit word 
             #Still an issue with a trailing '.'
             $ParsedLine.ActiveLine = $ParsedLine.ActiveLine.Replace("%.", "%. ") 
-
+            if ($ParsedLine.IndentLevel -eq 1){
+                Write-Host -NoNewline "  "
+                Write-Host -NoNewline "          "
+            }
             Highlight_Numbers($ParsedLine.ActiveLine)
+            if ($ParsedLine.IndentLevel -eq 1 -and $ParsedLine.ActiveLine.StartsWith('And')){
+                $ParsedLine.IndentLevel=0
+            }
         }
     }
 }
@@ -761,63 +769,67 @@ function ProcessLines()
     foreach ($line in $msg) 
     {
 
-        $ParsedLine.Populate($line)
+        # Removes Blank line in Pitspin
+        if (-not ($BaseFile -eq "pitspin.log" -and $line -eq ""))
+        {
+            $ParsedLine.Populate($line)
 
-        #Fix for Issue 1
-        $ParsedLine.Line1=($ParsedLine.KeyWord -eq "Starting Loot Writer")
+            #Fix for Issue 1
+            $ParsedLine.Line1=($ParsedLine.KeyWord -eq "Starting Loot Writer")
 
-        if ($ParsedLine.Exception)
-        {
-            ExceptionParser
-        }
-        if ($ParsedLine.Exception)
-        {
-            Write-host
-        }
-        elseif($ParsedLine.CustomAllocation)
-        {
-            CustomAllocationParser
-        }
-        elseif ($ParsedLine.SettingsActive) 
-        {
-            SettingsParser
-        }
-        else
-        {
-            if (-not $ParsedLine.Merge) 
+            if ($ParsedLine.Exception)
             {
-                if ($ParsedLine.TimeStamp -ne $ActiveSettings.LastTimeStamp)
-                {
-                    #Display New Minute
-                    Write-host -NoNewline $ParsedLine.TimeStamp
-                    #Store New value
-                    $ActiveSettings.LastTimeStamp = $ParsedLine.TimeStamp
-                }
-                else
-                {
-                    Write-host -NoNewline $ParsedLine.filler
-                }
-                Write-host -NoNewline ": "
+                ExceptionParser
             }
+            if ($ParsedLine.Exception)
+            {
+                Write-host
+            }
+            elseif($ParsedLine.CustomAllocation)
+            {
+                CustomAllocationParser
+            }
+            elseif ($ParsedLine.SettingsActive) 
+            {
+                SettingsParser
+            }
+            else
+            {
+                if (-not $ParsedLine.Merge) 
+                {
+                    if ($ParsedLine.TimeStamp -ne $ActiveSettings.LastTimeStamp)
+                    {
+                        #Display New Minute
+                        Write-host -NoNewline $ParsedLine.TimeStamp
+                        #Store New value
+                        $ActiveSettings.LastTimeStamp = $ParsedLine.TimeStamp
+                    }
+                    else
+                    {
+                        Write-host -NoNewline $ParsedLine.filler
+                    }
+                    Write-host -NoNewline ": "
+                }
 # _dir
 # $"{(int)e.Item.Tag} - {e.Item.Checked}"
 # e.ToString()
-            switch ($BaseFile) {
-                "inject.log" { 
-                    Parse_inject_Keywords  
+                switch ($BaseFile) {
+                    "inject.log" { 
+                        Parse_inject_Keywords  
+                    }
+                    "pitspin.log" { 
+                        Parse_pitspin_Keywords  
+                    }
+                    "loot.log" { 
+                        Parse_loot_Keywords  
+                    }
+                    Default {
+                        Parse_inject_Keywords  
+                    }
                 }
-                "pitspin.log" { 
-                    Parse_pitspin_Keywords  
+                if ( -not $ParsedLine.Merge){
+                    Write-host
                 }
-                "loot.log" { 
-                    Parse_loot_Keywords  
-                }
-                Default {
-                    Parse_inject_Keywords  
-                }
-            }
-            if ( -not $ParsedLine.Merge){
-                Write-host
             }
         }
     }
