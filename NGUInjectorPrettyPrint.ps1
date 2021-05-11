@@ -24,41 +24,46 @@ if (Test-Path -Path $PSScriptRoot\Colours.csv )
         }
     }
 }
+try {
+    $stopWatch = New-Object -TypeName System.Diagnostics.Stopwatch
+    $ActiveSettings = [LogParserSettings]::new()
+    $ParsedLine = [LogLine]::new()
 
-$stopWatch = New-Object -TypeName System.Diagnostics.Stopwatch
-$ActiveSettings = [LogParserSettings]::new()
-$ParsedLine = [LogLine]::new()
+    $ValidFiles = @("inject.log", "pitspin.log", "loot.log")
+    $ValidModes = @("full", "tail")
 
-$ValidFiles = @("inject.log", "pitspin.log", "loot.log")
-$ValidModes = @("full", "tail")
+    $RanFromParam=$false
 
-$RanFromParam=$false
+    $Old_Title = $host.ui.RawUI.WindowTitle
 
-$Old_Title = $host.ui.RawUI.WindowTitle
+    if ($LogFile -and $LogFile -in $ValidFiles)
+    {
+        $BaseFile=$LogFile
+        if ($DisplayMode -and $DisplayMode -in $ValidModes){
+            $FileName = $Env:Userprofile+"\Desktop\NGUInjector\logs\"+$BaseFile
 
-if ($LogFile -and $LogFile -in $ValidFiles)
-{
-    $BaseFile=$LogFile
-    if ($DisplayMode -and $DisplayMode -in $ValidModes){
-        $FileName = $Env:Userprofile+"\Desktop\NGUInjector\logs\"+$BaseFile
+            $RanFromParam=$true
 
-        $RanFromParam=$true
+            $host.ui.RawUI.WindowTitle = $BaseFile + ' Parser'
 
-        $host.ui.RawUI.WindowTitle = $BaseFile + ' Parser'
-
-        if ($DisplayMode -eq $ValidModes[0]){
-            Get-Content $FileName | ForEach-Object{ ProcessLines }
-        }
-        else {
-            Get-Content $FileName -Tail 2 -Wait| ForEach-Object{ ProcessLines } 
+            if ($DisplayMode -eq $ValidModes[0]){
+                Get-Content $FileName | ForEach-Object{ ProcessLines }
+            }
+            else {
+                Get-Content $FileName -Tail 2 -Wait| ForEach-Object{ ProcessLines } 
+            }
         }
     }
+    if ($RanFromParam)
+    {
+        Read-Host -Prompt "Press Enter to Exit" -MaskInput
+    }
+    else {
+        run
+    }
 }
-if ($RanFromParam)
-{
-    Read-Host -Prompt "Press Enter to Exit" -MaskInput
+finally {
+    Write-host
+    Write-host "Resetting title to",$Old_Title
+    $host.ui.RawUI.WindowTitle=$Old_Title
 }
-else {
-    run
-}
-$host.ui.RawUI.WindowTitle=$Old_Title
