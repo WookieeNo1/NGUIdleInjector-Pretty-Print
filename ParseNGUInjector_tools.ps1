@@ -29,6 +29,9 @@ $clrOperational = 14
 $clrSettings = 3
 $clrException = 4
 
+#Specific Message Highlighting
+$clrMoneyPitReward = $clrINFO
+
 #Allows for Inject, PitSpin and Loot logs
 $BaseFile="inject.log"
 
@@ -684,7 +687,7 @@ function Parse_pitspin_Keywords()
     switch ($ParsedLine.KeyWord) {
         "Money Pit Reward"
         {
-            Write-Host -NoNewline $ParsedLine.KeyWord,": " -ForegroundColor $clrINFO -Separator ""
+            Write-Host -NoNewline $ParsedLine.KeyWord,": " -ForegroundColor $clrMoneyPitReward -Separator ""
             Highlight_Numbers($ParsedLine.Parts[1])
         }
         # Fix for Daily Spin Rewards Not Highlighting numbers
