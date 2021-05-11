@@ -1,7 +1,5 @@
 #########################################
 ## Requires NGUInjectorPrettyPrint.ps1 ##
-## Requires NGUInjectorPrettyPrint.ps1 ##
-## Requires NGUInjectorPrettyPrint.ps1 ##
 #########################################
 Clear-Host
 
@@ -646,9 +644,9 @@ function Parse_inject_Keywords{
 
                 default
                 {
-##############################################################
-##   Assume ANYTHING unknown is the start of an exception   ##
-##############################################################
+                    ##############################################################
+                    ##   Assume ANYTHING unknown is the start of an exception   ##
+                    ##############################################################
                     Write-Host -NoNewline $ParsedLine.ActiveLine -ForegroundColor $clrWarning -Separator ":"
                     $ParsedLine.Exception = $true
                 }
@@ -707,15 +705,23 @@ function Parse_pitspin_Keywords()
         }
         default{
             #Fix for Incorrect number highlighting when no space separating value and Non-digit word 
-            #Still an issue with a trailing '.'
             $ParsedLine.ActiveLine = $ParsedLine.ActiveLine.Replace("%.", "%. ") 
             if ($ParsedLine.IndentLevel -eq 1){
                 Write-Host -NoNewline "  "
                 Write-Host -NoNewline "          "
             }
             Highlight_Numbers($ParsedLine.ActiveLine)
-            if ($ParsedLine.IndentLevel -eq 1 -and $ParsedLine.ActiveLine.StartsWith('And')){
+            # Detection of Lines needing indentaion extended
+            if ($ParsedLine.IndentLevel -eq 1 -and 
+                (
+                    $ParsedLine.ActiveLine.StartsWith('And') -or $ParsedLine.ActiveLine.StartsWith('+')
+                )
+            ){
                 $ParsedLine.IndentLevel=0
+            }
+            # Clear indentation when necessary
+            if ($ParsedLine.ActiveLine.EndsWith('You also gain:') -or $ParsedLine.ActiveLine.EndsWith('but you gain:')){
+                $ParsedLine.IndentLevel=1
             }
         }
     }
