@@ -11,7 +11,8 @@ $configFullPath = "$PSScriptRoot\ParseNGUInjector_tools.ps1"
 Import-Module -Force $configFullPath
 
 #Import User-Defined Variables from validated list
-$ValidVariables = @("clrMoneyPitReward")
+# Added clrHyperBole - set to 0 for make it disappear
+$ValidVariables = @("clrMoneyPitReward","clrHyperbole")
 if (Test-Path -Path $PSScriptRoot\Colours.csv )
 {
     Import-CSV -Path $PSScriptRoot\Colours.csv|Foreach-Object -Process {

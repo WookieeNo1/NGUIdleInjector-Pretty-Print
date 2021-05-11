@@ -31,7 +31,7 @@ $clrException = 4
 
 #Specific Message Highlighting
 $clrMoneyPitReward = $clrINFO
-
+$clrHyperbole = $clrException
 #Allows for Inject, PitSpin and Loot logs
 $BaseFile="inject.log"
 
@@ -331,8 +331,11 @@ class LogLine {
     [void] Populate([string]$str)
     {
         [bool]$DateStripped = $false
+
+        # Assorted String fixes
         $str= $str.Replace("<b>", "")
         $str= $str.Replace("</b>", "")
+        $str= $str.Replace("(BOSS)also","(BOSS) also")
 
         $this.Raw = $str
         $this.Parts = @($str.trim().split(":"))
@@ -753,7 +756,7 @@ function Parse_loot_Keywords()
             Write-Host -NoNewline $splitstr
             Write-Host -NoNewline $Parts[1] -ForegroundColor $clrSignificantData
             if ($Hyperbole -ne ""){
-                Write-Host -NoNewline "",$Hyperbole,"" -ForegroundColor $clrException -Separator "! "
+                Write-Host -NoNewline "",$Hyperbole,"" -ForegroundColor $clrHyperbole -Separator "! "
             }
         }
     }
