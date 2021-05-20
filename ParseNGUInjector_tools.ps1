@@ -924,7 +924,7 @@ function DisplayHelp() {
     Write-Host
     Write-Host "Colours are defined using the clr... variables at the top of the script. Change these as you will."
     Write-Host
-    Write-Host "clrSignificantData" -ForegroundColor $clrSignificantData -NoNewline; " - used to identify Significant Data (surpise!)"
+    Write-Host "clrSignificantData" -ForegroundColor $clrSignificantData -NoNewline; " - used to identify Significant Data (surprise!)"
     Write-Host "clrINFO" -ForegroundColor $clrINFO -NoNewline; "            - used to identify Information Labels"
     Write-Host "clrWarning" -ForegroundColor $clrWarning -NoNewline; "         - used to identify either Exception messages OR Significant Data exceeding the CAP "
     Write-Host "clrOperational" -ForegroundColor $clrOperational -NoNewline; "     - used to identify Operational Messages"
