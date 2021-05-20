@@ -37,7 +37,7 @@ try {
                 Get-Content $FileName | ForEach-Object { ProcessLines }
             }
             else {
-                Get-Content $FileName -Tail 2 -Wait | ForEach-Object { ProcessLines } 
+                Get-Content $FileName -Tail 2 -Wait | ForEach-Object { ProcessLines }
             }
         }
     }

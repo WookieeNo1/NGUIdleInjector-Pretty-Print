@@ -80,16 +80,16 @@ function CheckColoursFile {
         elseif (-not ((Get-Content $ColoursFullPath -Raw) -match "\r\n$")) {
             # Insert terminal CR/LF as necessary
             Add-Content $ColoursFullPath ""
-        } 
-    
+        }
+
         # Need to check that all current values are present
         $MissingColours = foreach ($Colour in $Colours) {
-            $test = Import-CSV -Path $ColoursFullPath | 
-            Where-Object { 
+            $test = Import-CSV -Path $ColoursFullPath |
+            Where-Object {
                 $FileVariable = $_.Variable.Replace(" ", "")
                 $FileVariable = $FileVariable.Replace("`t", ",")
-                # Detect either normal or commented Variable, ignoring WhiteSapce
-                $FileVariable -eq $Colour.Variable -or $FileVariable -eq '#' + $Colour.Variable 
+                # Detect either normal or commented Variable, ignoring WhiteSpace
+                $FileVariable -eq $Colour.Variable -or $FileVariable -eq '#' + $Colour.Variable
             }
             #1 if no result, add to output
             if ( $NULL -eq $test) {
@@ -111,15 +111,15 @@ function ReadColoursFile {
     $ValidVariables = @("clrMoneyPitReward", "clrHyperbole")
 
     Import-CSV -Path $ColoursFullPath | Foreach-Object -Process {
-    
+
         if ($PSItem.Variable -in $ValidVariables) {
-            # Replace any existing Variables' values 
+            # Replace any existing Variables' values
             Remove-Variable -name $PSItem.Variable -ErrorAction SilentlyContinue
-            
-            New-Variable -Name $PSItem.Variable -Value $PSItem.Value 
+
+            New-Variable -Name $PSItem.Variable -Value $PSItem.Value
         }
     }
-    
+
 }
 
 function MergeParser {
@@ -267,13 +267,13 @@ Function CustomAllocationParser() {
             Write-Host -NoNewline $SubParts[1], "" -ForegroundColor $clrSettings
             Write-Host -NoNewline $SubParts[2], "" -ForegroundColor $clrSignificantData
             Write-Host -NoNewline $SubParts[3], "" -ForegroundColor $clrSettings
-        }        
+        }
         elseif ($ParsedLine.Raw.StartsWith("Rebirthing when number bonus is")) {
             # "Rebirthing when number bonus is {nrb.MultTarget}x previous number"
             Write-Host -NoNewline $SubParts[1..4], "" -ForegroundColor $clrSettings -Separator " "
             Write-Host -NoNewline $SubParts[5], "" -ForegroundColor $clrSignificantData
             Write-Host -NoNewline $SubParts[6..7], "" -ForegroundColor $clrSettings -Separator " "
-        }        
+        }
         elseif ($ParsedLine.Raw.StartsWith("Rebirthing when number allows you")) {
             # "Rebirthing when number allows you +{brb.NumBosses} bosses"
             Write-Host -NoNewline $SubParts[1..4], "" -ForegroundColor $clrSettings -Separator " "
@@ -411,7 +411,7 @@ class LogLine {
         }
         elseif ($this.Parts.Count -gt 1) {
             $this.KeyWord = $this.Parts[0].trim()
-            $this.ActiveLine = $this.Parts.Trim() -join ":" 
+            $this.ActiveLine = $this.Parts.Trim() -join ":"
         }
         else {
             $this.KeyWord = $this.Parts[0].ToString().Trim()
@@ -461,7 +461,7 @@ function Parse_inject_Keywords {
 
     switch ($ParsedLine.KeyWord) {
         # $"Boosts Needed to Green: {needed.Power} Power, {needed.Toughness} Toughness, {needed.Special} Special"
-        "Boosts Needed to Green" { 
+        "Boosts Needed to Green" {
             Write-Host -NoNewline $ParsedLine.KeyWord, ": " -ForegroundColor $clrINFO -Separator ""
             BoostParser($ParsedLine.Parts[1])
         }
@@ -510,7 +510,7 @@ function Parse_inject_Keywords {
 
         # "Injected"
         "Injected" {
-            Write-Host -NoNewline $ParsedLine.KeyWord -ForegroundColor $clrOperational 
+            Write-Host -NoNewline $ParsedLine.KeyWord -ForegroundColor $clrOperational
         }
         # $"Key: {index}"
         "Key" {
@@ -519,7 +519,7 @@ function Parse_inject_Keywords {
         }
         # $"Last Minute: {diff}." ---- NOT YET DONE
         # $"Last Minute: {diff}. Average Per Minute: {average:0}. ETA: {eta:0} minutes."
-        "Last Minute" { 
+        "Last Minute" {
             Write-Host -NoNewline $ParsedLine.KeyWord, ": " -ForegroundColor $clrINFO -Separator ""
             Write-Host -NoNewline $ParsedLine.Parts[1..2].trim(), "" -Separator ": "
             $Parts = $ParsedLine.Parts[3].trim().split(" ")
@@ -534,7 +534,7 @@ function Parse_inject_Keywords {
         }
 
         # $"Loaded Zone Overrides: {string.Join(",", overrides.ToArray())}"
-        "Loaded Zone Overrides" { 
+        "Loaded Zone Overrides" {
             Write-Host -NoNewline $ParsedLine.KeyWord, ": " -ForegroundColor $clrINFO -Separator ""
             Write-Host -NoNewline $ParsedLine.Parts[1].trim() -ForegroundColor $clrSignificantData
         }
@@ -625,7 +625,7 @@ function Parse_inject_Keywords {
                 # $"Merging {SanitizeName(target.name)} in slot {target.slot}"
                 # $"Merging {target.name} in slot {target.slot}"
                 "Merging" {
-                    Write-Host -NoNewline $ParsedLine.KeyWord, "" -ForegroundColor $clrINFO 
+                    Write-Host -NoNewline $ParsedLine.KeyWord, "" -ForegroundColor $clrINFO
                     MergeParser($ParsedLine.Parts[1])
                 }
                 # $"Moving to ITOPOD to idle."
@@ -662,7 +662,7 @@ function Parse_inject_Keywords {
 
                 # "Saving Settings"
                 "Saving" {
-                    Write-Host -NoNewline $ParsedLine.ActiveLine -ForegroundColor $clrOperational 
+                    Write-Host -NoNewline $ParsedLine.ActiveLine -ForegroundColor $clrOperational
                 }
 
                 # "Time Machine Gold is 0. Lets reset gold snipe zone."
@@ -680,7 +680,7 @@ function Parse_inject_Keywords {
 
                 # "Writing quicksave and json"
                 "Writing" {
-                    Write-Host -NoNewline $ParsedLine.ActiveLine -ForegroundColor $clrOperational 
+                    Write-Host -NoNewline $ParsedLine.ActiveLine -ForegroundColor $clrOperational
                 }
 
                 default {
@@ -692,7 +692,7 @@ function Parse_inject_Keywords {
                 }
             }
         }
-    }    
+    }
 }
 
 function Highlight_Numbers() {
@@ -701,7 +701,7 @@ function Highlight_Numbers() {
         $Parts = $args[0].trim().ToString().split(" ")
         foreach ($part in $Parts) {
             if ($part.Substring(0, 1) -in $Numeric) {
-                # fix for Numeric values without trailing ' ' 
+                # fix for Numeric values without trailing ' '
                 # eg - You eat the fruit and icrease your Attack and Defense! Power Fruit α's multiplier increased from <b>0%</b> to <b>4.489E+007%</b>.You've also gained 23982 Seeds!
                 if ($part.EndsWith('%.')) {
                     Write-Host -NoNewline $part.Substring(0, $part.Length - 1) -ForegroundColor $clrSignificantData
@@ -736,15 +736,15 @@ function Parse_pitspin_Keywords() {
             $ParsedLine.IndentLevel = 1
         }
         default {
-            # Fix for Incorrect number highlighting when no space separating value and Non-digit word 
-            $ParsedLine.ActiveLine = $ParsedLine.ActiveLine.Replace("%.", "%. ") 
+            # Fix for Incorrect number highlighting when no space separating value and Non-digit word
+            $ParsedLine.ActiveLine = $ParsedLine.ActiveLine.Replace("%.", "%. ")
             if ($ParsedLine.IndentLevel -eq 1) {
                 Write-Host -NoNewline "  "
                 Write-Host -NoNewline "          "
             }
             Highlight_Numbers($ParsedLine.ActiveLine)
             # Detection of Lines needing indentaion extended
-            if ($ParsedLine.IndentLevel -eq 1 -and 
+            if ($ParsedLine.IndentLevel -eq 1 -and
                 (
                     $ParsedLine.ActiveLine.StartsWith('And') -or $ParsedLine.ActiveLine.StartsWith('+')
                 )
@@ -839,17 +839,17 @@ function ProcessLines() {
                 # $"{(int)e.Item.Tag} - {e.Item.Checked}"
                 # e.ToString()
                 switch ($BaseFile) {
-                    "inject.log" { 
-                        Parse_inject_Keywords  
+                    "inject.log" {
+                        Parse_inject_Keywords
                     }
-                    "pitspin.log" { 
-                        Parse_pitspin_Keywords  
+                    "pitspin.log" {
+                        Parse_pitspin_Keywords
                     }
-                    "loot.log" { 
-                        Parse_loot_Keywords  
+                    "loot.log" {
+                        Parse_loot_Keywords
                     }
                     Default {
-                        Parse_inject_Keywords  
+                        Parse_inject_Keywords
                     }
                 }
                 if ( -not $ParsedLine.Merge) {
@@ -946,19 +946,19 @@ function run() {
     $FileName = $Env:Userprofile + "\Desktop\NGUInjector\logs\" + $BaseFile
 
     switch (Menu) {
-        "1" { 
+        "1" {
             $host.ui.RawUI.WindowTitle = $BaseFile + “ Parser”
-            Get-Content $FileName -Tail 2 -Wait | ForEach-Object { ProcessLines ($_) } 
+            Get-Content $FileName -Tail 2 -Wait | ForEach-Object { ProcessLines ($_) }
         }
-        "2" { 
+        "2" {
             $stopWatch.Restart()
             $host.ui.RawUI.WindowTitle = $BaseFile + “ Parser”
-            Get-Content $FileName | ForEach-Object { ProcessLines ($_) } 
+            Get-Content $FileName | ForEach-Object { ProcessLines ($_) }
 
             Write-Host "File Processing time :", $stopWatch.Elapsed
             Read-Host -Prompt "Press Enter to Exit" -MaskInput
         }
-        "h" { 
+        "h" {
             DisplayHelp
             Read-Host -Prompt "Press Enter to Exit" -MaskInput
         }
