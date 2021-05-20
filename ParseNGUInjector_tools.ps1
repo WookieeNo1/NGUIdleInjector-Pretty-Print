@@ -919,7 +919,7 @@ function DisplayHelp() {
     Write-Host
     Write-Host "There are 2 options"
     Write-Host
-    Write-Host "1 - runs continuously displaying the last 2 lines added. Exit by pressing Ctrl-C"
+    Write-Host "1 - runs continuously displaying the last 10 lines added. Exit by pressing Ctrl-C"
     Write-Host "2 - Processes the entire file"
     Write-Host
     Write-Host "Colours are defined using the clr... variables at the top of the script. Change these as you will."
@@ -948,7 +948,7 @@ function run() {
     switch (Menu) {
         "1" {
             $host.ui.RawUI.WindowTitle = $BaseFile + “ Parser”
-            Get-Content $FileName -Tail 2 -Wait | ForEach-Object { ProcessLines ($_) }
+            Get-Content $FileName -Tail 10 -Wait | ForEach-Object { ProcessLines ($_) }
         }
         "2" {
             $stopWatch.Restart()
