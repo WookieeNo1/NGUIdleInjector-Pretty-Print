@@ -948,7 +948,7 @@ function run() {
     switch (Menu) {
         "1" {
             $host.ui.RawUI.WindowTitle = $BaseFile + “ Parser”
-            Get-Content $FileName -Tail 10 -Wait | ForEach-Object { ProcessLines ($_) }
+            Get-Content $FileName -Tail 30 -Wait | ForEach-Object { ProcessLines ($_) }
         }
         "2" {
             $stopWatch.Restart()
