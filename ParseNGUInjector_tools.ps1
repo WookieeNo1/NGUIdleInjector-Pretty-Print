@@ -66,10 +66,10 @@ function CheckColoursFile {
         $TestCSV = Get-Content $ColoursFullPath -First 1
         If ($TestCSV.Length -eq 0 -or $TestCSV -notmatch 'Variable,Value') {
             # File Present, but invalid
-            $Backup = $ColoursFullPath.Replace('CSV','old')
+            $Backup = $ColoursFullPath.Replace('CSV', 'old')
 
             Write-Host "Invalid CSV - $ColoursFullPath" -ForegroundColor $clrWarning
-            Write-Host "Existing File renamed to",$Backup -ForegroundColor $clrWarning
+            Write-Host "Existing File renamed to", $Backup -ForegroundColor $clrWarning
 
             Remove-Item $Backup -ErrorAction SilentlyContinue
             Rename-Item $ColoursFullPath $Backup
@@ -84,7 +84,7 @@ function CheckColoursFile {
 
         # Need to check that all current values are present
         $MissingColours = foreach ($Colour in $Colours) {
-            $test = Import-CSV -Path $ColoursFullPath |
+            $test = Import-Csv -Path $ColoursFullPath |
             Where-Object {
                 $FileVariable = $_.Variable.Replace(" ", "")
                 $FileVariable = $FileVariable.Replace("`t", ",")
@@ -98,7 +98,7 @@ function CheckColoursFile {
         }
         # If any output, append, using default values, to CSV file
         if ( $MissingColours ) {
-            $MissingColours | Export-CSV $ColoursFullPath –Append -UseQuotes Never
+            $MissingColours | Export-Csv $ColoursFullPath –Append -UseQuotes Never
         }
     }
 
@@ -110,11 +110,11 @@ function ReadColoursFile {
     # Added clrHyperBole - set to 0 for make it disappear
     $ValidVariables = @("clrMoneyPitReward", "clrHyperbole")
 
-    Import-CSV -Path $ColoursFullPath | Foreach-Object -Process {
+    Import-Csv -Path $ColoursFullPath | ForEach-Object -Process {
 
         if ($PSItem.Variable -in $ValidVariables) {
             # Replace any existing Variables' values
-            Remove-Variable -name $PSItem.Variable -ErrorAction SilentlyContinue
+            Remove-Variable -Name $PSItem.Variable -ErrorAction SilentlyContinue
 
             New-Variable -Name $PSItem.Variable -Value $PSItem.Value
         }
@@ -350,7 +350,7 @@ function BoostParser {
 function ExceptionParser() {
 
     if ($ParsedLine.Parts[0].TrimStart().StartsWith( "at ")) {
-        Write-host -NoNewline $ParsedLine.Parts[0] -ForegroundColor $clrException
+        Write-Host -NoNewline $ParsedLine.Parts[0] -ForegroundColor $clrException
     }
     else {
         $ParsedLine.Exception = $false
@@ -814,7 +814,7 @@ function ProcessLines() {
                 ExceptionParser
             }
             if ($ParsedLine.Exception) {
-                Write-host
+                Write-Host
             }
             elseif ($ParsedLine.CustomAllocation) {
                 CustomAllocationParser
@@ -826,14 +826,14 @@ function ProcessLines() {
                 if (-not $ParsedLine.Merge) {
                     if ($ParsedLine.TimeStamp -ne $ActiveSettings.LastTimeStamp) {
                         # Display New Minute
-                        Write-host -NoNewline $ParsedLine.TimeStamp
+                        Write-Host -NoNewline $ParsedLine.TimeStamp
                         # Store New value
                         $ActiveSettings.LastTimeStamp = $ParsedLine.TimeStamp
                     }
                     else {
-                        Write-host -NoNewline $ParsedLine.filler
+                        Write-Host -NoNewline $ParsedLine.filler
                     }
-                    Write-host -NoNewline ": "
+                    Write-Host -NoNewline ": "
                 }
                 # _dir
                 # $"{(int)e.Item.Tag} - {e.Item.Checked}"
@@ -853,7 +853,7 @@ function ProcessLines() {
                     }
                 }
                 if ( -not $ParsedLine.Merge) {
-                    Write-host
+                    Write-Host
                 }
             }
         }

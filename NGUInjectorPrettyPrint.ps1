@@ -49,7 +49,7 @@ try {
     }
 }
 finally {
-    Write-host
-    Write-host "Resetting title to", $Old_Title
+    Write-Host
+    Write-Host "Resetting title to", $Old_Title
     $host.ui.RawUI.WindowTitle = $Old_Title
 }
