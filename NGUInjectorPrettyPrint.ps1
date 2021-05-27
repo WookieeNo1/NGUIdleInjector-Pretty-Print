@@ -9,7 +9,7 @@ if ($PSVersionTable.PSversion.major -lt 7) {
 $configFullPath = "$PSScriptRoot\ParseNGUInjector_tools.ps1"
 Import-Module -Force $configFullPath
 
-#try {
+try {
     if ($p_LineFilter -and $p_LineFilter -ne "") {
         $p_LineFilter = $p_LineFilter.TrimStart("*").TrimEnd("*")
         $p_LineFilter = "*"+$p_LineFilter+"*"
@@ -65,9 +65,9 @@ Import-Module -Force $configFullPath
     else {
         run
     }
-#}
-#finally {
+}
+finally {
     Write-Host
     Write-Host "Resetting title to", $Old_Title
     $host.ui.RawUI.WindowTitle = $Old_Title
-#}
+}

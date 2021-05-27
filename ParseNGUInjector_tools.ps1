@@ -985,10 +985,10 @@ function run() {
             $host.ui.RawUI.WindowTitle = $BaseFile + “ Parser”
             $ActiveSettings.LineFilter
             if ($ActiveSettings.LineFilter) {
-                Get-Content $FileName -Tail 30 -Wait | Where-Object { $_ -like $ActiveSettings.LineFilter } | ForEach-Object { ProcessLines }
+                Get-Content $FileName -Tail 30 -Wait | Where-Object { $_ -like $ActiveSettings.LineFilter } | ForEach-Object { ProcessLines ($_) }
             }
             else {
-                Get-Content $FileName -Tail 30 -Wait | ForEach-Object { ProcessLines }
+                Get-Content $FileName -Tail 30 -Wait | ForEach-Object { ProcessLines ($_) }
             }
         }
         "2" {
@@ -996,10 +996,10 @@ function run() {
             $host.ui.RawUI.WindowTitle = $BaseFile + “ Parser”
             $ActiveSettings.LineFilter
             if ($ActiveSettings.LineFilter) {
-                Get-Content $FileName | Where-Object { $_ -like $ActiveSettings.LineFilter } | ForEach-Object { ProcessLines }
+                Get-Content $FileName | Where-Object { $_ -like $ActiveSettings.LineFilter } | ForEach-Object { ProcessLines ($_) }
             }
             else {
-                Get-Content $FileName | ForEach-Object { ProcessLines }
+                Get-Content $FileName | ForEach-Object { ProcessLines ($_) }
             }
             Write-Host "File Processing time :", $StopWatch.Elapsed
             Read-Host -Prompt "Press Enter to Exit" -MaskInput
