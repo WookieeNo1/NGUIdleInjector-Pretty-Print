@@ -49,6 +49,7 @@ $ColoursFullPath = "$PSScriptRoot\Colours.CSV"
 class LogParserSettings {
     [string]$LastTimeStamp = ""
     [string]$filler = ""
+    [string]$LineFilter = $null
 }
 
 function SetBaseColourFile {
@@ -883,31 +884,65 @@ function CapValues() {
     Write-Host -NoNewline "", $Values[1]
 }
 
-function Menu() {
-    $ValidInput = @("1", "2", "h", "q")
-
+function DisplayMenu() {
     Clear-Host
+    Write-Host 
     Write-Host -NoNewline "1 " -ForegroundColor $clrSignificantData; Write-Host "Show last 2 lines with wait (default in 5 5seconds) "
     Write-Host -NoNewline "2 " -ForegroundColor $clrSignificantData; Write-Host "Parse Full File"
+    Write-Host -NoNewline "f " -ForegroundColor $clrSignificantData; Write-Host -NoNewline "Enter Filter (Currently: "
+    if ($ActiveSettings.LineFilter) {
+        Write-Host $ActiveSettings.LineFilter ")"
+    }
+    else {
+        Write-Host "NO FILTER ACTIVE )"
+    }
+    Write-Host -NoNewline "s " -ForegroundColor $clrSignificantData; Write-Host "Switch file (Currently: $BaseFile)"
     Write-Host -NoNewline "h " -ForegroundColor $clrSignificantData; Write-Host "help"
     Write-Host
     Write-Host -NoNewline "q " -ForegroundColor $clrSignificantData; Write-Host "exit"
     Write-Host
+}
+function Menu() {
+    $ValidInput = @("1", "2", "h", "f", "s", "q")
 
     $RunOpt = ''
-    $stopWatch.Start()
+    DisplayMenu
+    #    $StopWatch.Start()
     while ($RunOpt -eq '') {
         if ([console]::KeyAvailable) {
 
             $RunOpt = [System.Console]::ReadKey("NoEcho").KeyChar
-            if ($RunOpt -eq 'p') {
-            }
-            if ($RunOpt -notin $ValidInput) {
-                [console]::Beep(1000, 100)
-                $RunOpt = ''
+            switch ($RunOpt) {
+                'f' {
+                    #               $StopWatch.stop()
+                    $ActiveSettings.LineFilter = Read-Host -Prompt "Enter a filter:"
+                    $ActiveSettings.LineFilter = $ActiveSettings.LineFilter.TrimStart("*").TrimEnd("*")
+                    if ($ActiveSettings.LineFilter -and $ActiveSettings.LineFilter -ne "") {
+
+                        $ActiveSettings.LineFilter = "*" + $ActiveSettings.LineFilter + "*"
+                    }
+                    else {
+                        $ActiveSettings.LineFilter = $NULL
+                    }
+                    $RunOpt = ''
+                    DisplayMenu
+                    #                $StopWatch.Restart()
+                }
+                's' {
+                    $Script:BaseFile = $Script:ValidFiles[($Script:ValidFiles.indexof($Script:BaseFile) + 1) % $Script:ValidFiles.length]
+                    $RunOpt = ''
+                    DisplayMenu
+                
+                }
+                default {
+                    if ($RunOpt -notin $ValidInput) {
+                        [console]::Beep(1000, 100)
+                        $RunOpt = ''
+                    }
+                }
             }
         }
-        elseif ($stopWatch.Elapsed.Seconds -ge 5) {
+        elseif ($StopWatch.Elapsed.Seconds -ge 5) {
             $RunOpt = "1"
         }
     }
@@ -948,14 +983,25 @@ function run() {
     switch (Menu) {
         "1" {
             $host.ui.RawUI.WindowTitle = $BaseFile + “ Parser”
-            Get-Content $FileName -Tail 30 -Wait | ForEach-Object { ProcessLines ($_) }
+            $ActiveSettings.LineFilter
+            if ($ActiveSettings.LineFilter) {
+                Get-Content $FileName -Tail 30 -Wait | Where-Object { $_ -like $ActiveSettings.LineFilter } | ForEach-Object { ProcessLines }
+            }
+            else {
+                Get-Content $FileName -Tail 30 -Wait | ForEach-Object { ProcessLines }
+            }
         }
         "2" {
-            $stopWatch.Restart()
+            $StopWatch.Restart()
             $host.ui.RawUI.WindowTitle = $BaseFile + “ Parser”
-            Get-Content $FileName | ForEach-Object { ProcessLines ($_) }
-
-            Write-Host "File Processing time :", $stopWatch.Elapsed
+            $ActiveSettings.LineFilter
+            if ($ActiveSettings.LineFilter) {
+                Get-Content $FileName | Where-Object { $_ -like $ActiveSettings.LineFilter } | ForEach-Object { ProcessLines }
+            }
+            else {
+                Get-Content $FileName | ForEach-Object { ProcessLines }
+            }
+            Write-Host "File Processing time :", $StopWatch.Elapsed
             Read-Host -Prompt "Press Enter to Exit" -MaskInput
         }
         "h" {

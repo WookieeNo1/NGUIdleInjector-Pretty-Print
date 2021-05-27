@@ -1,4 +1,4 @@
-param ($LogFile = $args[0], $DisplayMode = $args[1])
+param ($LogFile = $args[0], $DisplayMode = $args[1], $p_LineFilter = $args[2])
 
 # Fix for $host.ui.RawUI.WindowTitle = $BaseFile + ' Parser' Exception
 if ($PSVersionTable.PSversion.major -lt 7) {
@@ -9,12 +9,20 @@ if ($PSVersionTable.PSversion.major -lt 7) {
 $configFullPath = "$PSScriptRoot\ParseNGUInjector_tools.ps1"
 Import-Module -Force $configFullPath
 
-try {
+#try {
+    if ($p_LineFilter -and $p_LineFilter -ne "") {
+        $p_LineFilter = $p_LineFilter.TrimStart("*").TrimEnd("*")
+        $p_LineFilter = "*"+$p_LineFilter+"*"
+    }
+    else {
+        $p_LineFilter = $null
+    }
 
     CheckColoursFile
 
-    $stopWatch = New-Object -TypeName System.Diagnostics.Stopwatch
+    $StopWatch = New-Object -TypeName System.Diagnostics.StopWatch
     $ActiveSettings = [LogParserSettings]::new()
+    $ActiveSettings.LineFilter = $p_LineFilter
     $ParsedLine = [LogLine]::new()
 
     $ValidFiles = @("inject.log", "pitspin.log", "loot.log")
@@ -34,10 +42,20 @@ try {
             $host.ui.RawUI.WindowTitle = $BaseFile + ' Parser'
 
             if ($DisplayMode -eq $ValidModes[0]) {
-                Get-Content $FileName | ForEach-Object { ProcessLines }
+                if ($ActiveSettings.LineFilter) {
+                    Get-Content $FileName | where-object {$_ -like $ActiveSettings.LineFilter} | ForEach-Object { ProcessLines }
+                }
+                else{
+                    Get-Content $FileName | ForEach-Object { ProcessLines }
+                }
             }
             else {
-                Get-Content $FileName -Tail 30 -Wait | ForEach-Object { ProcessLines }
+                if ($ActiveSettings.LineFilter){
+                    Get-Content $FileName -Tail 30 -Wait | where-object {$_ -like $ActiveSettings.LineFilter} | ForEach-Object { ProcessLines }
+                }
+                else{
+                    Get-Content $FileName -Tail 30 -Wait | ForEach-Object { ProcessLines }
+                }
             }
         }
     }
@@ -47,9 +65,9 @@ try {
     else {
         run
     }
-}
-finally {
+#}
+#finally {
     Write-Host
     Write-Host "Resetting title to", $Old_Title
     $host.ui.RawUI.WindowTitle = $Old_Title
-}
+#}
