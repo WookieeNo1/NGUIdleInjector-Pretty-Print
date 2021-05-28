@@ -4,7 +4,7 @@ This is a simple powershell script (my first, so please don't bite) to pretty pr
 NGU Injector Continued.
 (https://github.com/thure-CodeMeister/NGUInjector-Continued)
 
-It requires PS 7, and will terminate iF any other version is detected.
+It requires PS 7, and will terminate if any other version is detected.
 
 Run using:
 
