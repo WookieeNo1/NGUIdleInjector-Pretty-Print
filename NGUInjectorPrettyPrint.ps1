@@ -1,66 +1,50 @@
-param ($LogFile = $args[0], $DisplayMode = $args[1], $p_LineFilter = $args[2])
-
-# Fix for $host.ui.RawUI.WindowTitle = $BaseFile + ' Parser' Exception
-if ($PSVersionTable.PSversion.major -lt 7) {
-    Write-Host "Requires PowerShell v7"
-    exit
-}
-
-$configFullPath = "$PSScriptRoot\ParseNGUInjector_tools.ps1"
-Import-Module -Force $configFullPath
+param ($LogFile = $args[0], $DisplayMode = $args[1], $LineFilter = $args[2])
 
 try {
-    if ($p_LineFilter -and $p_LineFilter -ne "") {
-        $p_LineFilter = $p_LineFilter.TrimStart("*").TrimEnd("*")
-        $p_LineFilter = "*"+$p_LineFilter+"*"
+    [bool]$bLogfile = $false
+    [bool]$bDisplay = $false
+
+    # Fix for $host.ui.RawUI.WindowTitle = $BaseFile + ' Parser' Exception
+    if ($PSVersionTable.PSversion.major -lt 7) {
+        Write-Host "Requires PowerShell v7"
+        exit
+    }
+    $configFullPath = "$PSScriptRoot\ParseNGUInjector_tools.ps1"
+    Import-Module -Force $configFullPath
+
+    if ($LogFile) {
+        $LogFile = $LogFile.ToString().ToLower()
+        $bLogfile = ($LogFile -in $ValidFiles)
+    }
+
+    if ($DisplayMode) {
+        $DisplayMode = $DisplayMode.ToString().ToLower()
+        $bDisplay = ($DisplayMode -in $ValidModes)
+    }
+
+    if ($LineFilter -and $LineFilter -ne "") {
+        $LineFilter = $LineFilter.TrimStart("*").TrimEnd("*")
+        $LineFilter = "*" + $LineFilter + "*"
     }
     else {
-        $p_LineFilter = $null
+        $LineFilter = $null
     }
 
     CheckColoursFile
 
-    $StopWatch = New-Object -TypeName System.Diagnostics.StopWatch
-    $ActiveSettings = [LogParserSettings]::new()
-    $ActiveSettings.LineFilter = $p_LineFilter
-    $ParsedLine = [LogLine]::new()
-
-    $ValidFiles = @("inject.log", "pitspin.log", "loot.log")
-    $ValidModes = @("full", "tail")
-
-    $RanFromParam = $false
+    $ActiveParser = [LogParser]::new()
+    $ActiveParser.LineFilter = $LineFilter
 
     $Old_Title = $host.ui.RawUI.WindowTitle
-
-    if ($LogFile -and $LogFile -in $ValidFiles) {
-        $BaseFile = $LogFile
-        if ($DisplayMode -and $DisplayMode -in $ValidModes) {
-            $FileName = $Env:Userprofile + "\Desktop\NGUInjector\logs\" + $BaseFile
-
-            $RanFromParam = $true
-
-            $host.ui.RawUI.WindowTitle = $BaseFile + ' Parser'
-
-            if ($DisplayMode -eq $ValidModes[0]) {
-                if ($ActiveSettings.LineFilter) {
-                    Get-Content $FileName | where-object {$_ -like $ActiveSettings.LineFilter} | ForEach-Object { ProcessLines }
-                }
-                else{
-                    Get-Content $FileName | ForEach-Object { ProcessLines }
-                }
-            }
-            else {
-                if ($ActiveSettings.LineFilter){
-                    Get-Content $FileName -Tail 30 -Wait | where-object {$_ -like $ActiveSettings.LineFilter} | ForEach-Object { ProcessLines }
-                }
-                else{
-                    Get-Content $FileName -Tail 30 -Wait | ForEach-Object { ProcessLines }
-                }
-            }
-        }
+    if ($bLogfile) {
+        $ActiveParser.BaseFile = $LogFile
     }
+    if ($bDisplay) {
+        $ActiveParser.DisplayMode = $DisplayMode
+    }
+    $RanFromParam = $bLogfile -and $bDisplay
     if ($RanFromParam) {
-        Read-Host -Prompt "Press Enter to Exit" -MaskInput
+        Execute
     }
     else {
         run

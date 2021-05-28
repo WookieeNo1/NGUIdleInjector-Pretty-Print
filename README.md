@@ -11,10 +11,10 @@ Run using:
     & <Directory>NGUInjectorPrettyPrint.ps1
     
     which displays a simple menu with options to either display the full file, or run continuously displaying
-    the last 2 lines added. There is also a very rudimentary help. This menu will default to the continuous 
-    option after 5 seconds.
+    the last 30 lines added. There is also a very rudimentary help. This menu will default with the highlighted 
+    options after 5 seconds of inactivity.
 
-It can accept 2 parameters (either by the named parameters below, or using the raw values):
+It can accept 3 parameters (either by the named parameters below, or using the raw values in the position indicated):
 
     -LogFile <Filename>
         - the name of the log to Pretty Print. 
@@ -22,9 +22,13 @@ It can accept 2 parameters (either by the named parameters below, or using the r
 
     -DisplayMode <DisplayMode>
         - full (Processes the entire file and ends)
-        - tail (runs continuously displaying the last 2 lines added. Exit by pressing Ctrl-C)
+        - tail (runs continuously displaying the last 30 lines added. Exit by pressing Ctrl-C)
 
-If either parameter is invalid, it will display the menu.
+    -LineFilter <String>
+        - Only lines containing the string will be included. Be aware that this may result in some lines being 
+          incorrectly colour coded.
+        
+If either of the LogFile or Displayname parameters is invalid, it will display the menu.
 
 TODO:
 
@@ -32,8 +36,6 @@ TODO:
     (As a quick fix, I recommend Windows Terminal, which can be downloaded at 
     https://www.microsoft.com/en-gb/p/windows-terminal/9n0dx20hk701#activetab=pivot:overviewtab )
 
-    The menu ONLY accesses Inject.log, this will be fixed to allow file selection
-    
     There are some log entries it has yet to handle, due to not having any examples to test.
 
 Changelog
@@ -49,5 +51,8 @@ Changelog
     Colours.csv: added clrHyperbole - set to 0 to make them disappear
 
     Colours.csv: Removed, now created as necessary with all legal User-defined colours 
+
+    Menu system overhauled - it now displays valid command line parameters, and allows the selection of Display mode and
+    Logfile
 
 (Yes, I'm British)
