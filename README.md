@@ -12,7 +12,7 @@ Run using:
     
     which displays a simple menu with options to either display the full file, or run continuously displaying
     the last 30 lines added. There is also a very rudimentary help. This menu will default with the highlighted 
-    options after 5 seconds of inactivity.
+    options after 10 seconds of inactivity.
 
 It can accept 3 parameters (either by the named parameters below, or using the raw values in the position indicated):
 
