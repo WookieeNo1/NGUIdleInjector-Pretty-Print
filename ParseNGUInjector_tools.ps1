@@ -129,11 +129,12 @@ function ReadColoursFile {
 
     Import-Csv -Path $ColoursFullPath | ForEach-Object -Process {
 
-        if ($PSItem.Variable -in $ValidVariables) {
+            #Fixed for Variable redefinition only applying locally by adding -Scope Script
+            if ($PSItem.Variable -in $ValidVariables) {
             # Replace any existing Variables' values
-            Remove-Variable -Name $PSItem.Variable -ErrorAction SilentlyContinue
+            Remove-Variable -Name $PSItem.Variable -ErrorAction SilentlyContinue -Scope Script
 
-            New-Variable -Name $PSItem.Variable -Value $PSItem.Value
+            New-Variable -Name $PSItem.Variable -Value ([int]($PSItem.Value)) -Scope Script
         }
     }
 
