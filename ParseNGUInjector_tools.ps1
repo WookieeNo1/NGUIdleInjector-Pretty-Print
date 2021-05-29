@@ -955,7 +955,7 @@ function DisplayMenu() {
     Write-Host
     Write-Host -NoNewline "Q " -ForegroundColor $clrSignificantData; Write-Host "Quit"
     Write-Host
-    Write-Host -NoNewline "`t`t`tIf no option selected for 5 seconds, Parsing will start with Highlighted Options" -ForegroundColor $clrSignificantData
+    Write-Host -NoNewline "`t`t`tIf no option selected for 10 seconds, Parsing will start with Highlighted Options" -ForegroundColor $clrSignificantData
     Write-Host
 }
 
