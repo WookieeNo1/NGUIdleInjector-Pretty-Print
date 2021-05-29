@@ -22,7 +22,7 @@ try {
         $bDisplay = ($DisplayMode -in $ValidModes)
     }
 
-    if ($LineFilter -and $LineFilter.Trim() -ne "" -and -not $LineFilter -in $InvalidLineFilters) {
+    if ($LineFilter -and $LineFilter -ne "") {
         $LineFilter = $LineFilter.TrimStart("*").TrimEnd("*")
         $LineFilter = "*" + $LineFilter + "*"
     }
