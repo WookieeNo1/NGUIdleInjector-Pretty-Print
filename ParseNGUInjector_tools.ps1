@@ -37,6 +37,9 @@ $MaxTailItems = 30
 $ValidFiles = @("inject.log", "pitspin.log", "loot.log")
 $ValidModes = @("tail", "full")
 
+#List blocking simple filter strings
+$InvalidLineFilters = @(" ", ":")
+
 $Colours = @(
     [PSCustomObject]@{
         Variable = "clrMoneyPitReward"
@@ -247,9 +250,13 @@ Function SettingsParser() {
             }
         }
         else {
-            Write-Host -NoNewline $Parts.split(",") -ForegroundColor $clrSignificantData -Separator ""
-            if ($Parts.EndsWith(",")) {
+            #Fix for exception caused cos of Stupid Coder forgetting to use correct variable
+            Write-Host -NoNewline $ActiveParser.ParsedLine.Parts.split(",") -ForegroundColor $clrSignificantData -Separator ""
+            if ($ActiveParser.ParsedLine.Parts.EndsWith(",")) {
                 Write-Host -NoNewline "," -ForegroundColor $clrSettings -Separator ""
+            }
+            elseif ($ActiveParser.LineFilter) {
+                $ActiveParser.ParsedLine.SettingsActive = $false
             }
         }
     }
@@ -817,7 +824,22 @@ function ProcessLines() {
     )
 
     foreach ($line in $msg) {
-
+        if ($null -ne $ActiveParser.LineFilter) {
+            #Detects end of Custom Allocation Block when Filter active
+            if ($ActiveParser.ParsedLine.CustomAllocation) {
+                if ($line.contains(':')) {
+                    $ActiveParser.ParsedLine.CustomAllocation = $false
+                    Write-Host
+                }
+            }
+            #Detects end of Settings Block when Filter active
+            if ($ActiveParser.ParsedLine.SettingsActive) {
+                if ($line.contains("s):") -and -not $line.EndsWith("{") ) {
+                    $ActiveParser.ParsedLine.SettingsActive = $false
+                    $ActiveParser.ParsedLine.IndentLevel = 0
+                }
+            }
+        }
         # Removes Blank line in Pitspin
         if (-not ($ActiveParser.BaseFile -eq $ValidFiles[1] -and $line -eq "")) {
             $ActiveParser.ParsedLine.Populate($line)
@@ -960,15 +982,21 @@ function Menu() {
                     $ActiveParser.BaseFile = $ValidFiles[($ValidFiles.indexof($ActiveParser.BaseFile) + 1) % $ValidFiles.length]
                 }
                 'E' {
-                    $ActiveParser.LineFilter = Read-Host -Prompt "Enter a filter"
-                    $ActiveParser.LineFilter = $ActiveParser.LineFilter.TrimStart("*").TrimEnd("*")
-                    if ($ActiveParser.LineFilter -and $ActiveParser.LineFilter -ne "") {
+                    $TempLineFilter = Read-Host -Prompt "Enter a filter"
+                    $TempLineFilter = $TempLineFilter.TrimStart("*").TrimEnd("*")
 
-                        $ActiveParser.LineFilter = "*" + $ActiveParser.LineFilter + "*"
+                    if ($TempLineFilter -and $TempLineFilter -in $InvalidLineFilters) {
+                        #Traps invalid/ridiculous entries
+                        [console]::Beep(1000, 100)
+                    }
+                    elseif ($TempLineFilter -and $TempLineFilter -ne "") {
+
+                        $ActiveParser.LineFilter = "*" + $TempLineFilter + "*"
                     }
                     else {
                         $ActiveParser.LineFilter = $NULL
                     }
+
                 }
                 { $PSItem -in $StopWatchRestartOptions } {
                     $RunOpt = ''
@@ -983,7 +1011,7 @@ function Menu() {
                 }
             }
         }
-        elseif ($ActiveParser.StopWatch.Elapsed.Seconds -ge 5) {
+        elseif ($ActiveParser.StopWatch.Elapsed.Seconds -ge 10) {
             $RunOpt = "P"
         }
     }
