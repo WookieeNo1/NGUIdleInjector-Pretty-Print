@@ -56,7 +56,7 @@ $ColoursFullPath = "$PSScriptRoot\Colours.CSV"
 class LogParser {
     [string]$LastTimeStamp = ""
     [string]$filler = ""
-    [string]$LineFilter = $null
+    [string]$LineFilter = ""
     [string]$BaseFile = $ValidFiles[0]
     [string]$DisplayMode = $ValidModes[0]
 
@@ -64,7 +64,7 @@ class LogParser {
 
     [LogLine]$ParsedLine = [LogLine]::new()
 
-    [string]Location() { return $Env:Userprofile + "\Desktop\NGUInjector\logs\" + $this.BaseFile }    
+    [string]Location() { return $Env:Userprofile + "\Desktop\NGUInjector\logs\" + $this.BaseFile } 
 }
 
 function SetBaseColourFile {
@@ -129,8 +129,8 @@ function ReadColoursFile {
 
     Import-Csv -Path $ColoursFullPath | ForEach-Object -Process {
 
-            #Fixed for Variable redefinition only applying locally by adding -Scope Script
-            if ($PSItem.Variable -in $ValidVariables) {
+        #Fixed for Variable redefinition only applying locally by adding -Scope Script
+        if ($PSItem.Variable -in $ValidVariables) {
             # Replace any existing Variables' values
             Remove-Variable -Name $PSItem.Variable -ErrorAction SilentlyContinue -Scope Script
 
@@ -825,7 +825,7 @@ function ProcessLines() {
     )
 
     foreach ($line in $msg) {
-        if ($null -ne $ActiveParser.LineFilter) {
+        if ("" -ne $ActiveParser.LineFilter) {
             #Detects end of Custom Allocation Block when Filter active
             if ($ActiveParser.ParsedLine.CustomAllocation) {
                 if ($line.contains(':')) {
