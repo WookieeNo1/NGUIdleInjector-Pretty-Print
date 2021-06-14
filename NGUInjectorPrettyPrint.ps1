@@ -31,6 +31,7 @@ try {
     }
 
     CheckColoursFile
+    MonitorColoursFile
 
     $ActiveParser = [LogParser]::new()
     $ActiveParser.LineFilter = $LineFilter
@@ -51,6 +52,7 @@ try {
     }
 }
 finally {
+    DisableMonitorColoursFile
     Write-Host
     Write-Host "Resetting title to", $Old_Title
     $host.ui.RawUI.WindowTitle = $Old_Title

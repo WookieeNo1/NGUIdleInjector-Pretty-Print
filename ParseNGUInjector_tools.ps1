@@ -53,6 +53,11 @@ $Colours = @(
 
 $ColoursFullPath = "$PSScriptRoot\Colours.CSV"
 
+$global:ColoursChanged = $false
+$global:watcher = $null
+$global:handlers = $null
+$global:EventDetails = $null
+
 class LogParser {
     [string]$LastTimeStamp = ""
     [string]$filler = ""
@@ -65,6 +70,47 @@ class LogParser {
     [LogLine]$ParsedLine = [LogLine]::new()
 
     [string]Location() { return $Env:Userprofile + "\Desktop\NGUInjector\logs\" + $this.BaseFile } 
+}
+
+function MonitorColoursFile {
+    $global:watcher = New-Object -TypeName System.IO.FileSystemWatcher -Property @{
+        Path                  = Split-Path $ColoursFullPath -Parent
+        Filter                = Split-Path $ColoursFullPath -Leaf
+        IncludeSubdirectories = $false
+    }
+
+    $action = {
+        #Retain the event
+        $global:EventDetails = $event.SourceEventArgs
+        #Enable the Change Notification
+        $global:ColoursChanged = $true
+        
+    }    
+
+    # set up the event handlers
+    $global:handlers = . {
+        Register-ObjectEvent -InputObject $global:watcher -EventName Changed -Action $action
+        Register-ObjectEvent -InputObject $global:watcher -EventName Created -Action $action
+        Register-ObjectEvent -InputObject $global:watcher -EventName Deleted -Action $action
+        Register-ObjectEvent -InputObject $global:watcher -EventName Renamed -Action $action
+    }
+}
+
+function DisableMonitorColoursFile {
+    $global:watcher.EnableRaisingEvents = $false
+  
+    # remove the event handlers
+    $global:handlers | ForEach-Object {
+        Unregister-Event -SourceIdentifier $_.Name
+    }
+    
+    # event handlers are technically implemented as a special kind
+    # of background job, so remove the jobs now:
+    $global:handlers | Remove-Job
+    
+    # properly dispose the FileSystemWatcher:
+    $global:watcher.Dispose()
+   
 }
 
 function SetBaseColourFile {
@@ -825,6 +871,21 @@ function ProcessLines() {
     )
 
     foreach ($line in $msg) {
+        if ($global:ColoursChanged) {
+            #Disable monitoring
+            $global:watcher.EnableRaisingEvents = $false
+
+            #Cancel the change notification
+            $global:ColoursChanged = $false
+
+            #Apply any valid changes
+            CheckColoursFile           
+
+            #Re-enable monitoring
+            $global:watcher.EnableRaisingEvents = $true
+
+        }
+
         if ("" -ne $ActiveParser.LineFilter) {
             #Detects end of Custom Allocation Block when Filter active
             if ($ActiveParser.ParsedLine.CustomAllocation) {
@@ -1055,6 +1116,8 @@ function Execute() {
     if ($ActiveParser.LineFilter) {
         $host.ui.RawUI.WindowTitle = $host.ui.RawUI.WindowTitle, $ActiveParser.LineFilter
     }
+
+    $global:watcher.EnableRaisingEvents = $true
 
     if ($ActiveParser.DisplayMode -eq $ValidModes[0]) {
         if ($ActiveParser.LineFilter) {

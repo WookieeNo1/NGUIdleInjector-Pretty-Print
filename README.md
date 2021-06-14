@@ -55,4 +55,8 @@ Changelog
     Menu system overhauled - it now displays valid command line parameters, and allows the selection of Display mode and
     Logfile
 
+    Colours.CSV is now monitored while running, and valid changes will be applied dynamically. Any errors within the file will 
+    result in the changed version being written to Colours.OLD (overwriting any existing copy), and the default values written 
+    out again.
+
 (Yes, I'm British)
