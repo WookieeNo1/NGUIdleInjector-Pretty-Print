@@ -26,6 +26,7 @@ $clrWarning = 12
 $clrOperational = 14
 $clrSettings = 3
 $clrException = 4
+$clrStandard = 15
 
 #Specific Message Highlighting
 $clrMoneyPitReward = $clrINFO
@@ -33,13 +34,13 @@ $clrHyperbole = $clrException
 
 $MaxTailItems = 30
 
-#Allows for Inject, PitSpin and Loot logs
-$ValidFiles = @("inject.log", "pitspin.log", "loot.log")
+#Allows for Inject, PitSpin, Loot and Cards logs
+$ValidFiles = @("inject.log", "pitspin.log", "loot.log", "cards.log")
 $ValidModes = @("tail", "full")
 
 #List blocking simple filter strings
 $InvalidLineFilters = @(" ", ":")
-
+#Added All colour variables to default list
 $Colours = @(
     [PSCustomObject]@{
         Variable = "clrMoneyPitReward"
@@ -48,6 +49,34 @@ $Colours = @(
     [PSCustomObject]@{
         Variable = "clrHyperbole"
         Value    = $clrHyperbole
+    }
+    [PSCustomObject]@{
+        Variable = "clrSignificantData"
+        Value    = 10
+    }
+    [PSCustomObject]@{
+        Variable = "clrINFO"
+        Value    = 11
+    }
+    [PSCustomObject]@{
+        Variable = "clrWarning"
+        Value    = 12
+    }
+    [PSCustomObject]@{
+        Variable = "clrOperational"
+        Value    = 3
+    }
+    [PSCustomObject]@{
+        Variable = "clrSettings"
+        Value    = 3
+    }
+    [PSCustomObject]@{
+        Variable = "clrException"
+        Value    = 4
+    }
+    [PSCustomObject]@{
+        Variable = "clrStandard"
+        Value    = 15
     }
 )
 
@@ -72,6 +101,18 @@ class LogParser {
     [string]Location() { return $Env:Userprofile + "\Desktop\NGUInjector\logs\" + $this.BaseFile } 
 }
 
+# LineFilter now parses regular expressions
+function ParseLineFilter {
+    param (
+        $Filters
+    )
+    $Filters = $Filters -join ','
+    $Filters = $Filters -replace '"|\*\.'  -replace ',','|'
+    $Filters = '^.*({0}).*$' -f $Filters
+
+    return $Filters
+
+}
 function MonitorColoursFile {
     $global:watcher = New-Object -TypeName System.IO.FileSystemWatcher -Property @{
         Path                  = Split-Path $ColoursFullPath -Parent
@@ -171,8 +212,9 @@ function CheckColoursFile {
 function ReadColoursFile {
     # Import User-Defined Variables from validated list
     # Added clrHyperBole - set to 0 for make it disappear
-    $ValidVariables = @("clrMoneyPitReward", "clrHyperbole")
-
+    #Added All colour variables to default list
+    $ValidVariables = @("clrMoneyPitReward", "clrHyperbole", "clrSignificantData", "clrINFO", "clrWarning", "clrOperational", "clrSettings", "clrException", "clrStandard")
+    
     Import-Csv -Path $ColoursFullPath | ForEach-Object -Process {
 
         #Fixed for Variable redefinition only applying locally by adding -Scope Script
@@ -192,7 +234,7 @@ function MergeParser {
     )
     $Parts = $MergeStr.trim().split(" in slot ", 2)
     Write-Host -NoNewline $Parts[0] -ForegroundColor $clrSignificantData
-    Write-Host -NoNewline " in slot "
+    Write-Host -NoNewline " in slot " -ForegroundColor $clrStandard
     Write-Host -NoNewline $Parts[1] -ForegroundColor $clrSignificantData
 }
 
@@ -202,7 +244,7 @@ function MissingParser {
     )
     $Parts = $MergeStr.trim().split(" with ID ", 2)
     Write-Host -NoNewline $Parts[0] -ForegroundColor $clrSignificantData
-    Write-Host -NoNewline " with ID "
+    Write-Host -NoNewline " with ID " -ForegroundColor $clrStandard
     Write-Host -NoNewline $Parts[1] -ForegroundColor $clrSignificantData
 }
 
@@ -226,6 +268,18 @@ Function RemovingParser() {
     Write-Host -NoNewline $Parts[0..3] -ForegroundColor $clrINFO
     Write-Host -NoNewline " "
     Write-Host -NoNewline $Parts[4] -ForegroundColor $clrSignificantData
+}
+
+Function BuyingParser() {
+    param (
+        $BuyingStr
+    )
+    $Parts = $BuyingStr.trim().split(" ", 2)
+    Write-Host -NoNewline " "
+    Write-Host -NoNewline $Parts[0] -ForegroundColor $clrSignificantData
+    Write-Host -NoNewline " "
+    Write-Host -NoNewline $Parts[1] -ForegroundColor $clrINFO
+
 }
 
 Function SettingsParser() {
@@ -408,10 +462,10 @@ function BoostParser {
 
         Write-Host -NoNewline $ThisBoost[0] -ForegroundColor $clrSignificantData
         Write-Host -NoNewline " "
-        Write-Host -NoNewline $ThisBoost[1]
+        Write-Host -NoNewline $ThisBoost[1] -ForegroundColor $clrStandard
 
         if ([array]::indexof($Boosts, $ActiveBoost) -lt $MaxBoosts) {
-            Write-Host -NoNewline $SplitStr
+            Write-Host -NoNewline $SplitStr -ForegroundColor $clrStandard
         }
     }
 }
@@ -515,6 +569,11 @@ class LogLine {
                     $this.Parts[0] = $this.KeyWord
                     $this.Parts.Add($this.ActiveLine.split(" ", 3)[2])
                 }
+                elseif ($this.ActiveLine.StartsWith("Saved Current Loadout")) {
+                    $this.KeyWord = "Saved Current Loadout"
+                    $this.Parts[0] = $this.KeyWord
+                    $this.Parts.Add($this.ActiveLine.split(" ", 4)[3])
+                }
             }
             "Upgrading" {
                 $this.KeyWord = "Upgrading Digger"
@@ -590,10 +649,10 @@ function Parse_inject_Keywords {
         # $"Last Minute: {diff}. Average Per Minute: {average:0}. ETA: {eta:0} minutes."
         "Last Minute" {
             Write-Host -NoNewline $ActiveParser.ParsedLine.KeyWord, ": " -ForegroundColor $clrINFO -Separator ""
-            Write-Host -NoNewline $ActiveParser.ParsedLine.Parts[1..2].trim(), "" -Separator ": "
+            Write-Host -NoNewline $ActiveParser.ParsedLine.Parts[1..2].trim(), ""  -ForegroundColor $clrStandard -Separator ": "
             $Parts = $ActiveParser.ParsedLine.Parts[3].trim().split(" ")
             Write-Host -NoNewline $Parts[0].trim(), "" -ForegroundColor $clrSignificantData
-            Write-Host -NoNewline $Parts[1].trim(), ""
+            Write-Host -NoNewline $Parts[1].trim(), "" -ForegroundColor $clrStandard
         }
         # "Loaded Settings"
         "Loaded Settings" {
@@ -618,9 +677,19 @@ function Parse_inject_Keywords {
             Write-Host -NoNewline $ActiveParser.ParsedLine.KeyWord, ": " -ForegroundColor $clrINFO -Separator ""
             Write-Host -NoNewline $ActiveParser.ParsedLine.Parts[1].trim() -ForegroundColor $clrSignificantData
         }
+        # Hack for Loadout Switch
+        "Received New Gear for Yggdrasil" {
+            Write-Host -NoNewline $ActiveParser.ParsedLine.KeyWord, ": " -ForegroundColor $clrINFO -Separator ""
+            Write-Host -NoNewline $ActiveParser.ParsedLine.Parts[1].trim() -ForegroundColor $clrSignificantData
+        }
         # $"Saved Loadout {string.Join(",", _savedLoadout.Select(x => x.ToString()).ToArray())}"
         # $"Saved Loadout {string.Join(",", _tempLoadout.Select(x => x.ToString()).ToArray())}"
         "Saved Loadout" {
+            Write-Host -NoNewline $ActiveParser.ParsedLine.KeyWord, ": " -ForegroundColor $clrINFO -Separator ""
+            Write-Host -NoNewline $ActiveParser.ParsedLine.Parts[1].trim() -ForegroundColor $clrSignificantData
+        }
+        # Hack for Loadout Switch
+        "Saved Current Loadout" {
             Write-Host -NoNewline $ActiveParser.ParsedLine.KeyWord, ": " -ForegroundColor $clrINFO -Separator ""
             Write-Host -NoNewline $ActiveParser.ParsedLine.Parts[1].trim() -ForegroundColor $clrSignificantData
         }
@@ -639,7 +708,11 @@ function Parse_inject_Keywords {
                 # "Bad save version"
 
                 # $"Buying {numPurchases} {t} purchases"
+                "Buying" {
+                    Write-Host -NoNewline "Buying" -ForegroundColor $clrINFO -Separator " "
+                    BuyingParser($ParseSub[1])
 
+                }
                 # "Created empty allocation profile. Please update allocation.json"
 
                 # "Buttering Major Quest"
@@ -828,6 +901,53 @@ function Parse_pitspin_Keywords() {
     }
 }
 
+function CardsCastParser(){
+    param (
+        $CardsCastStr
+    )
+    $CardsCastStr = $CardsCastStr -replace " Bonus Type", " BonusType"
+    $SubParts = $CardsCastStr.split(" ").Trim()
+    $TrashReason = ""    
+    # Trashed Cards 
+    if ($SubParts.count -gt 6)
+    {
+        $SubParts[5] = $SubParts[5].trim(",")
+        $TrashReason = $SubParts[8]
+    }
+    $SubParts[3] = $SubParts[3] + " " * (12 - $SubParts[3].length)
+    Write-Host -NoNewline $SubParts[0],"" -ForegroundColor $clrStandard
+    Write-Host -NoNewline $SubParts[1],""  -ForegroundColor $clrSignificantData
+    Write-Host -NoNewline $SubParts[2],"" -ForegroundColor $clrStandard
+    Write-Host -NoNewline $SubParts[3] -ForegroundColor $clrSignificantData
+    Write-Host -NoNewline " Bonus Type:","" -ForegroundColor $clrStandard
+    Write-Host -NoNewline $SubParts[5],"" -ForegroundColor $clrSignificantData
+
+    if ($TrashReason.length -gt 0) {
+        if ($TrashReason -eq "trash"){
+            $TrashReason = "All"
+        }
+        $Filler = " " * (15 - $SubParts[5].length)
+        Write-Host -NoNewline $Filler," Reason:","" -ForegroundColor $clrStandard
+        Write-Host -NoNewline $TrashReason -ForegroundColor $clrSignificantData
+    }
+
+}
+function Parse_cards_Keywords() {
+    switch ($ActiveParser.ParsedLine.KeyWord) {
+        "Cast Card" {
+            Write-Host -NoNewline $ActiveParser.ParsedLine.KeyWord, ": " -ForegroundColor $clrMoneyPitReward -Separator ""
+            CardsCastParser($ActiveParser.ParsedLine.Parts[1..4].trim() -join ": ")
+        }
+        "Trashed Card" {
+            Write-Host -NoNewline $ActiveParser.ParsedLine.KeyWord, ": " -ForegroundColor $clrMoneyPitReward -Separator ""
+            CardsCastParser($ActiveParser.ParsedLine.Parts[1..4].trim() -join ": ")
+        }
+        default {
+            Write-Host -NoNewline $ActiveParser.ParsedLine.KeyWord -ForegroundColor $clrOperational
+        }
+    }
+}
+
 function Parse_loot_Keywords() {
     $Parts = $ActiveParser.ParsedLine.ActiveLine.trim().split("!")
     if ($Parts[0] -like "*also dropped *") {
@@ -855,7 +975,7 @@ function Parse_loot_Keywords() {
 
         Write-Host -NoNewline $Parts[0] -ForegroundColor $clrSection1
         if ($Parts.count -gt 1) {
-            Write-Host -NoNewline $splitstr
+            Write-Host -NoNewline $splitstr -ForegroundColor $clrStandard
             Write-Host -NoNewline $Parts[1] -ForegroundColor $clrSignificantData
             if ($Hyperbole -ne "") {
                 Write-Host -NoNewline "", $Hyperbole, "" -ForegroundColor $clrHyperbole -Separator "! "
@@ -925,14 +1045,14 @@ function ProcessLines() {
                 if (-not $ActiveParser.ParsedLine.Merge) {
                     if ($ActiveParser.ParsedLine.TimeStamp -ne $ActiveParser.LastTimeStamp) {
                         # Display New Minute
-                        Write-Host -NoNewline $ActiveParser.ParsedLine.TimeStamp
+                        Write-Host -NoNewline $ActiveParser.ParsedLine.TimeStamp -ForegroundColor $clrStandard
                         # Store New value
                         $ActiveParser.LastTimeStamp = $ActiveParser.ParsedLine.TimeStamp
                     }
                     else {
                         Write-Host -NoNewline $ActiveParser.ParsedLine.filler
                     }
-                    Write-Host -NoNewline ": "
+                    Write-Host -NoNewline ": " -ForegroundColor $clrStandard
                 }
                 # _dir
                 # $"{(int)e.Item.Tag} - {e.Item.Checked}"
@@ -946,6 +1066,9 @@ function ProcessLines() {
                     }
                     $ValidFiles[2] {
                         Parse_loot_Keywords
+                    }
+                    $ValidFiles[3] {
+                        Parse_cards_Keywords
                     }
                     Default {
                         Parse_inject_Keywords
@@ -979,7 +1102,7 @@ function CapValues() {
         $clrValue = $clrWarning
     }
     Write-Host -NoNewline $Values[0] -ForegroundColor $clrValue
-    Write-Host -NoNewline "", $Values[1]
+    Write-Host -NoNewline "", $Values[1] -ForegroundColor $clrStandard
 }
 
 function SelectFromArray( ) {
@@ -1052,8 +1175,8 @@ function Menu() {
                         [console]::Beep(1000, 100)
                     }
                     elseif ($TempLineFilter -and $TempLineFilter -ne "") {
-
-                        $ActiveParser.LineFilter = "*" + $TempLineFilter + "*"
+                        #Prepare regex search string
+                        $ActiveParser.LineFilter = ParseLineFilter($TempLineFilter)
                     }
                     else {
                         $ActiveParser.LineFilter = $NULL
@@ -1114,14 +1237,22 @@ function Execute() {
 
     $host.ui.RawUI.WindowTitle = $ActiveParser.BaseFile
     if ($ActiveParser.LineFilter) {
-        $host.ui.RawUI.WindowTitle = $host.ui.RawUI.WindowTitle, $ActiveParser.LineFilter
+        # Include No of terms and filter in title
+        $NoTerms=$ActiveParser.LineFilter.split("|").count
+        $Terms = $NoTerms, "term" -join " "
+        if ($NoTerms -gt 1)
+        {
+            $Terms += "s"
+        }
+        $host.ui.RawUI.WindowTitle = $host.ui.RawUI.WindowTitle, $Terms, "- (", $ActiveParser.LineFilter, ")"
     }
 
     $global:watcher.EnableRaisingEvents = $true
 
     if ($ActiveParser.DisplayMode -eq $ValidModes[0]) {
+        # Tail mode switch to -match to allow for regex
         if ($ActiveParser.LineFilter) {
-            Get-Content $ActiveParser.Location() -Tail $MaxTailItems -Wait | Where-Object { $_ -like $ActiveParser.LineFilter } | ForEach-Object { ProcessLines }
+            Get-Content $ActiveParser.Location() -Tail $MaxTailItems -Wait | Where-Object { $_ -match $ActiveParser.LineFilter } | ForEach-Object { ProcessLines }
         }
         else {
             Get-Content $ActiveParser.Location() -Tail $MaxTailItems -Wait | ForEach-Object { ProcessLines }
@@ -1129,11 +1260,12 @@ function Execute() {
     }
     else {
         $ActiveParser.StopWatch.Restart()
+        # Full mode switch to Select-String to allow for regex - and faster processing
         if ($ActiveParser.LineFilter) {
-            Get-Content $ActiveParser.Location() | Where-Object { $_ -like $ActiveParser.LineFilter } | ForEach-Object { ProcessLines }
+            Select-String -Path $ActiveParser.Location() -Pattern $ActiveParser.LineFilter| ForEach-Object {ProcessLines($_.tostring().split(':')[3..10] -join ':')}
         }
         else {
-            Get-Content $ActiveParser.Location() | ForEach-Object { ProcessLines }
+            Select-String -Path $ActiveParser.Location() -Pattern '.*' | ForEach-Object {ProcessLines($_.tostring().split(':')[3..10] -join ':')}
         }
         Write-Host "File Processing time :", $ActiveParser.StopWatch.Elapsed
         Read-Host -Prompt "Press Enter to Exit" -MaskInput

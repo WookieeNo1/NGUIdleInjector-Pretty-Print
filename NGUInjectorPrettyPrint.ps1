@@ -1,4 +1,4 @@
-param ($LogFile = $args[0], $DisplayMode = $args[1], $LineFilter = $args[2])
+param ([String]$LogFile = $args[0], [String]$DisplayMode = $args[1], [System.object]$LineFilter = $args[2])
 
 try {
     [bool]$bLogfile = $false
@@ -23,8 +23,8 @@ try {
     }
 
     if ($LineFilter -and $LineFilter -ne "") {
-        $LineFilter = $LineFilter.TrimStart("*").TrimEnd("*")
-        $LineFilter = "*" + $LineFilter + "*"
+        #Prepare regex search string
+        $LineFilter = ParseLineFilter($LineFilter)
     }
     else {
         $LineFilter = $null
