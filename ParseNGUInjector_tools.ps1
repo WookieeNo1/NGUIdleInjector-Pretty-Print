@@ -20,17 +20,18 @@ Clear-Host
 #14 Yellow
 #15 White
 
-$clrSignificantData = 10
-$clrINFO = 11
-$clrWarning = 12
-$clrOperational = 14
-$clrSettings = 3
-$clrException = 4
-$clrStandard = 15
+$global:clrSignificantData = 10
+$global:clrINFO = 11
+$global:clrWarning = 12
+$global:clrOperational = 14
+$global:clrSettings = 3
+$global:clrException = 4
+$global:clrStandard = 15
 
 #Specific Message Highlighting
-$clrMoneyPitReward = $clrINFO
-$clrHyperbole = $clrException
+$global:clrMoneyPitReward = $clrINFO
+$global:clrHyperbole = $clrException
+$global:clrCardsField = $clrStandard
 
 $MaxTailItems = 30
 
@@ -78,14 +79,30 @@ $Colours = @(
         Variable = "clrStandard"
         Value    = 15
     }
+    [PSCustomObject]@{
+        Variable = "clrCardsField"
+        Value    = $clrCardsField
+    }
 )
 
 $ColoursFullPath = "$PSScriptRoot\Colours.CSV"
+
+$global:CardsSmartDisplay = $false
+
+$Flags = @(
+    [PSCustomObject]@{
+        Variable = "CardsSmartDisplay"
+        Value    = $CardsSmartDisplay
+    }
+)
+
+$FlagsFullPath = "$PSScriptRoot\Flags.CSV"
 
 $global:ColoursChanged = $false
 $global:watcher = $null
 $global:handlers = $null
 $global:EventDetails = $null
+
 
 class LogParser {
     [string]$LastTimeStamp = ""
@@ -113,6 +130,7 @@ function ParseLineFilter {
     return $Filters
 
 }
+
 function MonitorColoursFile {
     $global:watcher = New-Object -TypeName System.IO.FileSystemWatcher -Property @{
         Path                  = Split-Path $ColoursFullPath -Parent
@@ -154,78 +172,99 @@ function DisableMonitorColoursFile {
    
 }
 
-function SetBaseColourFile {
-    Add-Content -Path $ColoursFullPath -Value 'Variable,Value'
-    $Colours | Export-Csv -Path $ColoursFullPath -UseQuotes Never
+function SetBaseDataFile {
+    param (
+        $s_DataFilePath,
+        $a_DataItems
+    )
+
+    Add-Content -Path $s_DataFilePath -Value 'Variable,Value'
+    $a_DataItems | Export-Csv -Path $s_DataFilePath -UseQuotes Never
 }
 
 function CheckColoursFile {
+    CheckDataFile $ColoursFullPath $Colours
+}
+
+function CheckFlagsFile {
+    CheckDataFile $FlagsFullPath $Flags
+}
+
+function CheckDataFile(){
+    param (
+        $s_DataFilePath,
+        $a_DataItems
+    )
 
     # Colours File Does Not Exist
-    if ( -not (Test-Path -Path $ColoursFullPath) ) {
-        SetBaseColourFile
+    if ( -not (Test-Path -Path $s_DataFilePath) ) {
+        SetBaseDataFile $s_DataFilePath $a_DataItems
     }
     else {
-        $TestCSV = Get-Content $ColoursFullPath -First 1
+        $TestCSV = Get-Content $s_DataFilePath -First 1
         If ($TestCSV.Length -eq 0 -or $TestCSV -notmatch 'Variable,Value') {
             # File Present, but invalid
-            $Backup = $ColoursFullPath.Replace('CSV', 'old')
+            $Backup = $s_DataFilePath.Replace('CSV', 'old')
 
-            Write-Host "Invalid CSV - $ColoursFullPath" -ForegroundColor $clrWarning
+            Write-Host "Invalid CSV - $s_DataFilePath" -ForegroundColor $clrWarning
             Write-Host "Existing File renamed to", $Backup -ForegroundColor $clrWarning
 
             Remove-Item $Backup -ErrorAction SilentlyContinue
-            Rename-Item $ColoursFullPath $Backup
+            Rename-Item $s_DataFilePath $Backup
 
-            SetBaseColourFile
+            SetBaseDataFile $s_DataFilePath $a_DataItems
 
         }
-        elseif (-not ((Get-Content $ColoursFullPath -Raw) -match "\r\n$")) {
+        elseif (-not ((Get-Content $s_DataFilePath -Raw) -match "\r\n$")) {
             # Insert terminal CR/LF as necessary
-            Add-Content $ColoursFullPath ""
+            Add-Content $s_DataFilePath ""
         }
 
         # Need to check that all current values are present
-        $MissingColours = foreach ($Colour in $Colours) {
-            $test = Import-Csv -Path $ColoursFullPath |
+        $MissingItems = foreach ($Item in $a_DataItems) {
+            $test = Import-Csv -Path $s_DataFilePath |
             Where-Object {
                 $FileVariable = $_.Variable.Replace(" ", "")
                 $FileVariable = $FileVariable.Replace("`t", ",")
                 # Detect either normal or commented Variable, ignoring WhiteSpace
-                $FileVariable -eq $Colour.Variable -or $FileVariable -eq '#' + $Colour.Variable
+                $FileVariable -eq $Item.Variable -or $FileVariable -eq '#' + $Item.Variable
             }
             #1 if no result, add to output
             if ( $NULL -eq $test) {
-                $Colour
+                $Item
             }
         }
         # If any output, append, using default values, to CSV file
-        if ( $MissingColours ) {
-            $MissingColours | Export-Csv $ColoursFullPath –Append -UseQuotes Never
+        if ( $MissingItems ) {
+            $MissingItems | Export-Csv $s_DataFilePath –Append -UseQuotes Never
         }
     }
 
-    ReadColoursFile
+    ReadDataFile $s_DataFilePath $a_DataItems
 
 }
 
-function ReadColoursFile {
+function ReadDataFile() {
+    param (
+        $s_DataFilePath,
+        $a_DataItems
+    )
+
     # Import User-Defined Variables from validated list
-    # Added clrHyperBole - set to 0 for make it disappear
-    #Added All colour variables to default list
-    $ValidVariables = @("clrMoneyPitReward", "clrHyperbole", "clrSignificantData", "clrINFO", "clrWarning", "clrOperational", "clrSettings", "clrException", "clrStandard")
+    $ValidVariables = @($a_DataItems.Variable)
     
-    Import-Csv -Path $ColoursFullPath | ForEach-Object -Process {
+    Import-Csv -Path $s_DataFilePath | ForEach-Object -Process {
 
         #Fixed for Variable redefinition only applying locally by adding -Scope Script
         if ($PSItem.Variable -in $ValidVariables) {
-            # Replace any existing Variables' values
-            Remove-Variable -Name $PSItem.Variable -ErrorAction SilentlyContinue -Scope Script
-
-            New-Variable -Name $PSItem.Variable -Value ([int]($PSItem.Value)) -Scope Script
+            if ($s_DataFilePath -like "*Flags.csv") {
+                Set-Variable -Name $PSItem.Variable -Value ($PSItem.Value -like "True") -Scope Global
+            }
+            else {
+                Set-Variable -Name $PSItem.Variable -Value ($PSItem.Value) -Scope Global
+            }
         }
     }
-
 }
 
 function MergeParser {
@@ -905,6 +944,11 @@ function CardsCastParser(){
     param (
         $CardsCastStr
     )
+
+    $clrCost = $clrCardsField
+    $clrQuality = $clrCardsField
+    $clrType = $clrCardsField
+
     $CardsCastStr = $CardsCastStr -replace " Bonus Type", " BonusType"
     $SubParts = $CardsCastStr.split(" ").Trim()
     $TrashReason = ""    
@@ -913,24 +957,39 @@ function CardsCastParser(){
     {
         $SubParts[5] = $SubParts[5].trim(",")
         $TrashReason = $SubParts[8]
+        if ($global:CardsSmartDisplay){
+            switch ($TrashReason) {
+                "Cost" {
+                    $clrCost = $clrSignificantData
+                }
+                "Quality" {
+                    $clrQuality = $clrSignificantData
+                }
+                "trash" {
+                    $clrType = $clrSignificantData
+                }
+            }
+        }
     }
     $SubParts[3] = $SubParts[3] + " " * (12 - $SubParts[3].length)
-    Write-Host -NoNewline $SubParts[0],"" -ForegroundColor $clrStandard
+    Write-Host -NoNewline $SubParts[0],"" -ForegroundColor $clrCost
     Write-Host -NoNewline $SubParts[1],""  -ForegroundColor $clrSignificantData
-    Write-Host -NoNewline $SubParts[2],"" -ForegroundColor $clrStandard
+    Write-Host -NoNewline $SubParts[2],"" -ForegroundColor $clrQuality
     Write-Host -NoNewline $SubParts[3] -ForegroundColor $clrSignificantData
-    Write-Host -NoNewline " Bonus Type:","" -ForegroundColor $clrStandard
+    Write-Host -NoNewline " Bonus Type:","" -ForegroundColor $clrType
     Write-Host -NoNewline $SubParts[5],"" -ForegroundColor $clrSignificantData
 
-    if ($TrashReason.length -gt 0) {
-        if ($TrashReason -eq "trash"){
-            $TrashReason = "All"
-        }
-        $Filler = " " * (15 - $SubParts[5].length)
-        Write-Host -NoNewline $Filler," Reason:","" -ForegroundColor $clrStandard
-        Write-Host -NoNewline $TrashReason -ForegroundColor $clrSignificantData
-    }
+    if (-not $global:CardsSmartDisplay) {
 
+        if ($TrashReason.length -gt 0) {
+            if ($TrashReason -eq "trash"){
+                $TrashReason = "All"
+            }
+            $Filler = " " * (15 - $SubParts[5].length)
+            Write-Host -NoNewline $Filler," Reason:","" -ForegroundColor $clrStandard
+            Write-Host -NoNewline $TrashReason -ForegroundColor $clrSignificantData
+        }
+    }
 }
 function Parse_cards_Keywords() {
     switch ($ActiveParser.ParsedLine.KeyWord) {
@@ -1269,6 +1328,7 @@ function Execute() {
         }
         Write-Host "File Processing time :", $ActiveParser.StopWatch.Elapsed
         Read-Host -Prompt "Press Enter to Exit" -MaskInput
+
     }
 }
 

@@ -1,6 +1,10 @@
 param ([String]$LogFile = $args[0], [String]$DisplayMode = $args[1], [System.object]$LineFilter = $args[2])
 
+
 try {
+
+    $ExistingVariables = Get-Variable -Scope Global| Select-Object -ExpandProperty Name
+
     [bool]$bLogfile = $false
     [bool]$bDisplay = $false
 
@@ -33,6 +37,8 @@ try {
     CheckColoursFile
     MonitorColoursFile
 
+    CheckFlagsFile
+    
     $ActiveParser = [LogParser]::new()
     $ActiveParser.LineFilter = $LineFilter
 
@@ -56,4 +62,11 @@ finally {
     Write-Host
     Write-Host "Resetting title to", $Old_Title
     $host.ui.RawUI.WindowTitle = $Old_Title
+
+    $NewVariables = Get-Variable | Select-Object -ExpandProperty Name | Where-Object {$ExistingVariables -notcontains $_ -and $_ -ne "ExistingVariables"}
+    
+    if ($NewVariables)
+    {
+        Remove-Variable $NewVariables -ErrorAction SilentlyContinue -Scope Global
+    }
 }
