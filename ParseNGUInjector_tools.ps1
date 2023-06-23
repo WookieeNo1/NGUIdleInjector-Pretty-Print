@@ -36,8 +36,12 @@ $global:clrCardsField = $clrStandard
 $MaxTailItems = 30
 
 #Allows for Inject, PitSpin, Loot and Cards logs
-$ValidFiles = @("inject.log", "pitspin.log", "loot.log", "cards.log")
-$ValidModes = @("tail", "full")
+$ValidFiles   = @("inject.log", "pitspin.log", "loot.log", "cards.log")
+$ValidModes   = @("tail", "full")
+
+#Allows for variation of log directory
+$ValidLogDir  = @("desktop", "userdir")
+$ValidBaseDir = @("\Desktop", "\AppData\LocalLow")
 
 #List blocking simple filter strings
 $InvalidLineFilters = @(" ", ":")
@@ -110,12 +114,14 @@ class LogParser {
     [string]$LineFilter = ""
     [string]$BaseFile = $ValidFiles[0]
     [string]$DisplayMode = $ValidModes[0]
+    [string]$LogDir = $ValidLogDir[0]
+    [string]$BaseDir = $ValidBaseDir[0]
 
     [System.Diagnostics.StopWatch]$StopWatch = [System.Diagnostics.Stopwatch]::new()
 
     [LogLine]$ParsedLine = [LogLine]::new()
 
-    [string]Location() { return $Env:Userprofile + "\Desktop\NGUInjector\logs\" + $this.BaseFile } 
+    [string]Location() { return $Env:Userprofile + $this.BaseDir + "\NGUInjector\logs\" + $this.BaseFile } 
 }
 
 # LineFilter now parses regular expressions
@@ -581,11 +587,19 @@ class LogLine {
         }
         switch ($this.KeyWord.split(" ")[0]) {
             "Casting" {
-                $this.KeyWord = "Casting Failed"
-                $this.Parts[0] = $this.KeyWord
-                $this.Parts.Add($this.ActiveLine.split(" - ", 2)[0])
-                $this.Parts[1] = $this.Parts[1].Replace($this.KeyWord, "").Trim()
-                $this.Parts.Add($this.ActiveLine.split(" - ", 2)[1])
+                if($this.KeyWord -like "Casting Failed") {
+                    $this.KeyWord = "Casting Failed"
+                    $this.Parts[0] = $this.KeyWord
+                    $this.Parts.Add($this.ActiveLine.split(" - ", 2)[0])
+                    $this.Parts[1] = $this.Parts[1].Replace($this.KeyWord, "").Trim()
+                    $this.Parts.Add($this.ActiveLine.split(" - ", 2)[1])
+                }
+                else {
+                    $this.KeyWord = "Casting"
+                    $this.Parts[0] = $this.KeyWord
+                    $this.Parts.Add($this.ActiveLine)
+                    $this.Parts[1] = $this.Parts[1].Replace($this.KeyWord, "").Trim()
+                }
             }
             "Merging" {
                 $this.Parts = $this.ActiveLine.split(" ", 2)
@@ -1185,6 +1199,7 @@ function DisplayMenu() {
     Clear-Host
     Write-Host 
     Write-Host -NoNewline "M " -ForegroundColor $clrSignificantData; Write-Host -NoNewline "Change Mode:`t`t"; SelectFromArray $ActiveParser.DisplayMode $ValidModes
+    Write-Host -NoNewline "D " -ForegroundColor $clrSignificantData; Write-Host -NoNewline "Change Directory:`t"; SelectFromArray $ActiveParser.LogDir $ValidLogDir
     Write-Host -NoNewline "F " -ForegroundColor $clrSignificantData; Write-Host -NoNewline "Change File:`t`t"; SelectFromArray $ActiveParser.BaseFile $ValidFiles
     Write-Host -NoNewline "E " -ForegroundColor $clrSignificantData; Write-Host -NoNewline "Enter Filter`t`t"
     if ($ActiveParser.LineFilter) {
@@ -1206,8 +1221,8 @@ function DisplayMenu() {
 function Menu() {
     [string]$RunOpt = ''
 
-    $ValidInput = @("M", "F", "E", "H", "P", "Q")
-    $StopWatchRestartOptions = @("M", "F", "E")
+    $ValidInput = @("M", "D", "F", "E", "H", "P", "Q")
+    $StopWatchRestartOptions = @("M", "D", "F", "E")
 
     DisplayMenu
     $ActiveParser.StopWatch.Start()
@@ -1221,6 +1236,11 @@ function Menu() {
                 }
                 'M' {
                     $ActiveParser.DisplayMode = $ValidModes[($ValidModes.indexof($ActiveParser.DisplayMode) + 1) % $ValidModes.length]
+                }
+                'D' {
+                    [int]$Index = $ValidLogDir.indexof($ActiveParser.LogDir);
+                    $ActiveParser.LogDir = $ValidLogDir[($Index + 1) % $ValidLogDir.length]
+                    $ActiveParser.BaseDir = $ValidBaseDir[($Index + 1) % $ValidBaseDir.length]
                 }
                 'F' {
                     $ActiveParser.BaseFile = $ValidFiles[($ValidFiles.indexof($ActiveParser.BaseFile) + 1) % $ValidFiles.length]

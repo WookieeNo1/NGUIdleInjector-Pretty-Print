@@ -1,8 +1,11 @@
 # NGUIdleInjector-Pretty-Print
 
 This is a simple powershell script (my first, so please don't bite) to pretty print the output from 
-NGU Injector Continued.
+NGU Injector Continued et al.
+
 (https://github.com/thure-CodeMeister/NGUInjector-Continued)
+(https://github.com/tomerpeleg-pub/NGUInjector)
+(https://github.com/JConquistador/NGUInjector/releases)
 
 It requires PS 7, and will terminate if any other version is detected.
 
@@ -14,7 +17,7 @@ Run using:
     the last 30 lines added. There is also a very rudimentary help. This menu will default with the highlighted 
     options after 10 seconds of inactivity.
 
-It can accept 3 parameters (either by the named parameters below, or using the raw values in the position indicated):
+It can accept 4 parameters (either by the named parameters below, or using the raw values in the position indicated):
 
     -LogFile <Filename>
         - the name of the log to Pretty Print. 
@@ -24,10 +27,14 @@ It can accept 3 parameters (either by the named parameters below, or using the r
         - full (Processes the entire file and ends)
         - tail (runs continuously displaying the last 30 lines added. Exit by pressing Ctrl-C)
 
+    -LogDir <Expression>
+        - Allows the selection of base Directory for the Log Files
+          (desktop, userdir are the only valid options)
+
     -LineFilter <Expression>
         - Only lines matching the expression will be included. Be aware that this may result in some lines being 
           incorrectly colour coded. Updated to use regex.
-        
+
 If either of the LogFile or Displayname parameters is invalid, it will display the menu.
 
 TODO:
@@ -72,5 +79,9 @@ Changelog
     
     (mainly internal, but all Write-Host calls with no -Foreground parameter now use -ForegroundColor $clrStandard, which allows
     for complete user control of the colour scheme)
+
+    LogDir: Allows for the user selection of the location of the log files used
+
+    Casting Failed issues addressed (Thanks JConquistador)
 
 (Yes, I'm British)

@@ -1,5 +1,5 @@
-param ([String]$LogFile = $args[0], [String]$DisplayMode = $args[1], [System.object]$LineFilter = $args[2])
-
+param ([String]$LogFile = $args[0], [String]$DisplayMode = $args[1], [System.object]$LogDir = $args[2], [System.object]$LineFilter = $args[3])
+#Added Switch for LogDir Base Directory
 
 try {
 
@@ -7,6 +7,7 @@ try {
 
     [bool]$bLogfile = $false
     [bool]$bDisplay = $false
+    [bool]$bLogDir  = $false
 
     # Fix for $host.ui.RawUI.WindowTitle = $BaseFile + ' Parser' Exception
     if ($PSVersionTable.PSversion.major -lt 7) {
@@ -24,6 +25,11 @@ try {
     if ($DisplayMode) {
         $DisplayMode = $DisplayMode.ToString().ToLower()
         $bDisplay = ($DisplayMode -in $ValidModes)
+    }
+
+    if ($LogDir) {
+        $LogDir = $LogDir.ToString().ToLower()
+        $bLogDir = ($LogDir -in $ValidLogDir)
     }
 
     if ($LineFilter -and $LineFilter -ne "") {
@@ -49,6 +55,13 @@ try {
     if ($bDisplay) {
         $ActiveParser.DisplayMode = $DisplayMode
     }
+
+    if ($bLogDir) {
+        if ($LogDir -eq $ValidLogDir[1]) {
+            $ActiveParser.BaseDir = $ValidBaseDir[1]
+        }
+    }
+    
     $RanFromParam = $bLogfile -and $bDisplay
     if ($RanFromParam) {
         Execute
